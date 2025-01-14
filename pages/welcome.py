@@ -44,7 +44,10 @@ class Welcome(ft.View):
                 )
             ]
         )
-        for widget in (self.box,):
+        self.fp_print_devis = ft.FilePicker()
+        self.fp_print_facture = ft.FilePicker()
+
+        for widget in (self.box, self.fp_print_devis, self.fp_print_facture):
             self.page.overlay.append(widget)
 
         self.controls = [

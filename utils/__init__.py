@@ -143,3 +143,28 @@ class CtButton(ft.Container):
         else:
             self.scale = 0.9
             self.update()
+
+class MiniCtButton(ft.Container):
+    def __init__(self, my_icon, my_tool,my_datas, on_click_function,):
+        super().__init__(
+            border_radius=6, padding=5, bgcolor="#f0f0f6",
+            on_click=on_click_function,
+            scale=ft.transform.Scale(0.7),
+            animate_scale=ft.animation.Animation(300, ft.AnimationCurve.FAST_OUT_SLOWIN),
+            on_hover=self.hover_ct,
+            data=my_datas,
+            tooltip=my_tool,
+            content=ft.Icon(
+                my_icon,
+                color=ft.colors.BLACK87,
+            )
+        )
+        self.my_icon = my_icon
+
+    def hover_ct(self, e):
+        if e.data == "true":
+            self.scale = 0.8
+            self.update()
+        else:
+            self.scale = 0.7
+            self.update()

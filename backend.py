@@ -4,7 +4,7 @@ import datetime
 from flet.core import row
 from pygments.lexers import data
 
-today = datetime.date.today()
+# today = datetime.date.today()
 my_base = "facturier.db"
 INITIALES = "FMD"
 
@@ -28,8 +28,8 @@ def connexion_base():
                     note_bene       TEXT,
                     delai           TEXT,
                     point_liv       TEXT,
-                    validite        TEXT,
-                    paiement        TEXT)""")
+                    validite        INTEGER,
+                    paiement        INTEGER)""")
 
     # Details devis
     cur.execute("""CREATE TABLE IF NOT EXISTS devis_details (
@@ -202,35 +202,34 @@ def update_devis_details(ref, qte, prix, id_det):
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute("""UPDATE devis_details SET 
-                                        reference = ?,
-                                        qte = ?,
-                                        prix = ?  
-                                        WHERE id = ?""", (ref, qte, prix, id_det))
+        reference = ?,
+        qte = ?,
+        prix = ?  
+        WHERE id = ?""", (ref, qte, prix, id_det))
     conn.commit()
     conn.close()
 
 
-def update_devis(montant, remise, montant_lettres, numero, note_bene, delai, point_liv, validite, paiement):
+def update_devis(montant, remise, note_bene, delai, point_liv, validite, paiement, numero):
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute("""UPDATE devis SET 
-                    montant = ?,
-                    remise = ?,
-                    montant_lettres = ?,
-                    note_bene = ?,
-                    delai = ?,
-                    point_liv = ?,
-                    validite = ?,
-                    paiement = ?
-                    WHERE numero = ?""", (montant, remise, montant_lettres, numero, note_bene, delai, point_liv, validite, paiement))
+        montant = ?,
+        remise = ?,
+        note_bene = ?,
+        delai = ?,
+        point_liv = ?,
+        validite = ?,
+        paiement = ?
+        WHERE numero = ?""", (montant, remise, note_bene, delai, point_liv, validite, paiement, numero))
     conn.commit()
     conn.close()
 
 
-def delete_devis_details(id_detail):
+def delete_devis_details(numero):
     con = sql.connect(my_base)
     cur = con.cursor()
-    cur.execute("""DELETE FROM devis_details WHERE id = ?""", (id_detail, ))
+    cur.execute("""DELETE FROM devis_details WHERE numero = ?""", (numero, ))
     con.commit()
     con.close()
 
@@ -325,9 +324,14 @@ def show_info_devis(numero):
                     FROM devis WHERE numero = ? """,
                 (numero,))
     resultat = cur.fetchone()
+    final = {
+        "client": resultat[0], "date": resultat[1], "objet": resultat[2], "montant": resultat[3], "remise": resultat[4],
+        "montant_lettres": resultat[5], "statut": resultat[6], "note_bene": resultat[7], "delai": resultat[8],
+        "point_liv": resultat[9], "validite": resultat[10], "paiement": resultat[11]
+    }
     conn.commit()
     conn.close()
-    return resultat
+    return final
 
 
 def find_devis_details(numero):
@@ -455,7 +459,10 @@ def id_client_by_name(nom):
     result = cur.fetchone()
     conn.commit()
     conn.close()
-    return result
+    return result[0]
+
+
+print(id_client_by_name("AGRECAM"))
 
 
 def add_client(nom, ini, cont, nui, rc, mail, comm):
@@ -560,7 +567,7 @@ def infos_clients_par_id(id_client):
 
 # table factures _____________________________________________________________________
 def add_facture(numero, client, montant, objet, remise, montant_lettres, devis, bc_client, ov, delai):
-    global today
+    today = datetime.date.today()
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute("""INSERT INTO factures values 
@@ -663,6 +670,7 @@ for row in all_factures_by_client_id(29):
     print(row)
     total = row['total'] - row['total']*row['remise']/100
     reste = total - row['regle']
+    print(total)
     print(reste)
 
 
@@ -1060,21 +1068,15 @@ def find_bordereau_num(client):
     cur = conn.cursor()
     cur.execute("""SELECT id FROM bordereau ORDER BY id DESC""")
     resultat = cur.fetchone()
-
-    r_final = ""
-
-    if resultat == None:
+    if resultat is None:
         r_final = INITIALES + "/BL/" + str(client) + "001"
     else:
         if resultat[0] < 10:
             r_final = INITIALES + "/BL/" + str(client) + "00" + str(resultat[0])
-
-        elif resultat[0] > 10 and resultat[0] < 100:
+        elif 10 < resultat[0] < 100:
             r_final = INITIALES + "/BL/" + str(client) + "0" + str(resultat[0])
-
         else:
             r_final = INITIALES + "/BL/" + str(client) + str(resultat[0])
-
     conn.commit()
     conn.close()
     return r_final

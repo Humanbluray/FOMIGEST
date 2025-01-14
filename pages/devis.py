@@ -2,6 +2,11 @@ from utils import *
 import flet as ft
 import backend as be
 from utils.useful_functions import ajout_separateur, ecrire_en_lettres
+import datetime
+from docx import Document
+from docx.shared import Pt, Cm
+from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
 
 
 class OneArticle(ft.Container):
@@ -34,20 +39,38 @@ class OneArticle(ft.Container):
                 count += 1
 
         if count == 0:
-            self.cp.table_selected.rows.append(
-                ft.DataRow(
-                    cells=[
-                        ft.DataCell(ft.Text(self.ref)),
-                        ft.DataCell(ft.Text(self.des)),
-                        ft.DataCell(ft.Text(f"{self.qte.value}")),
-                        ft.DataCell(ft.Text(f"{self.prix.value}")),
-                    ]
-                )
+            self.cp.new_table.controls.append(
+                NewOneArticle(self.cp, self.ref, self.des, int(self.qte.value), int(self.prix.value))
             )
-            self.cp.table_selected.update()
+            self.cp.new_table.update()
+            self.cp.cp.box.title.value = "Validé"
+            self.cp.cp.box.content.value = "Article ajouté"
+            self.cp.cp.box.open = True
+            self.cp.cp.box.update()
+
+            somme = 0
+            nb_ref = 0
+            for widget in self.cp.new_table.controls[:]:
+                somme += (int(widget.art_prix.value) * int(widget.art_qte.value))
+                nb_ref += 1
+
+            self.cp.new_montant.value = somme
+            total = int(somme - (somme * int(self.cp.new_remise.value) / 100))
+            self.cp.new_lettres.value = ecrire_en_lettres(total)
+            self.cp.new_nb_ref.value = f"{nb_ref} article(s)"
+
+            for widget in (self.cp.new_nb_ref, self.cp.new_montant, self.cp.new_lettres):
+                widget.update()
+
             for widget in (self.prix, self.qte):
                 widget.value = None
                 widget.update()
+
+        else:
+            self.cp.cp.box.title.value = "Erreur"
+            self.cp.cp.box.content.value = "Qté et prix sont obligatoires"
+            self.cp.cp.box.open = True
+            self.cp.cp.box.update()
 
 
 class AddOneArticle(ft.Container):
@@ -217,6 +240,109 @@ class EditOneArticle(ft.Container):
         self.cp.edit_table.update()
 
 
+class NewOneArticle(ft.Container):
+    def __init__(self, cp: object, ref: str, des: str, qte: int, prix: int):
+        super().__init__(
+            padding=ft.padding.only(10, 3, 10, 3),
+        )
+        self.cp = cp
+        self.ref = ref
+        self.des = des
+        self.prix = prix
+        self.qte = qte
+        self.status = False
+        self.art_ref = ft.TextField(**readonly_field_style, value=ref, width=140, label="Référence",)
+        self.art_des = ft.TextField(**readonly_field_style, value=des, width=300, label="Nom pièce", tooltip=f"{des}")
+        self.art_qte = ft.TextField(**numbers_field_style, value=f"{qte}", width=80, label="Qté", disabled=True)
+        self.art_prix = ft.TextField(**numbers_field_style, value=f"{prix}", width=100, label="Qté", disabled=True)
+        self.bt_modif = CtButton(ft.icons.CHECK, "Modifier", None, self.edit_article)
+        self.bt_modif.visible = False
+        self.bt_allow_modif = CtButton("edit_outlined", "Modifier", None, self.allow_edit)
+        self.bt_allow_modif.visible = True
+        self.content = ft.Row(
+            controls=[
+                ft.Row(
+                    controls=[self.art_ref, self.art_des, self.art_qte, self.art_prix]
+                ),
+               ft.Row(
+                   controls=[
+                       self.bt_modif, self.bt_allow_modif,
+                       CtButton("delete_outlined", "Modifier", None, self.delete_article)
+                   ], spacing=0
+               )
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+        )
+
+    def allow_edit(self, e):
+        # if not self.status == "edit_outlined":
+        self.bt_modif.visible = True
+        self.bt_modif.update()
+        e.control.visible = False
+        e.control.update()
+        self.status = True
+        for widget in (self.art_qte, self.art_prix):
+            widget.disabled = False
+            widget.update()
+
+    def edit_article(self, e):
+        e.control.visible = False
+        e.control.update()
+        self.bt_allow_modif.visible = True
+        self.bt_allow_modif.update()
+        self.status = False
+        for widget in (self.art_qte, self.art_prix):
+            widget.disabled = True
+            widget.update()
+
+        somme = 0
+        nb_ref = 0
+
+        if len(self.cp.new_table.controls[:]) == 0:
+            self.cp.new_montant.value = "0"
+            self.cp.new_lettres.value = ecrire_en_lettres(0)
+            self.cp.new_nb_ref.value = f"Aucune ligne(s)"
+
+        else:
+            for widget in self.cp.new_table.controls[:]:
+                somme += (int(widget.art_prix.value) * int(widget.art_qte.value))
+                nb_ref += 1
+
+            self.cp.new_montant.value = f"{somme}"
+            total = int(somme - (somme * int(self.cp.new_remise.value) / 100))
+            self.cp.new_lettres.value = ecrire_en_lettres(total)
+            self.cp.new_nb_ref.value = f"{nb_ref} ligne(s)"
+
+        for widget in (self.cp.new_nb_ref, self.cp.new_montant, self.cp.new_lettres):
+            widget.update()
+
+        self.cp.new_table.update()
+
+    def delete_article(self, e):
+        self.cp.new_table.controls.remove(self)
+        somme = 0
+        nb_ref = 0
+
+        if len(self.cp.new_table.controls[:]) == 0:
+            self.cp.new_montant.value = "0"
+            self.cp.new_lettres.value = ecrire_en_lettres(0)
+            self.cp.new_nb_ref.value = f"Aucune ligne(s)"
+
+        else:
+            for widget in self.cp.new_table.controls[:]:
+                somme += (int(widget.art_prix.value) * int(widget.art_qte.value))
+                nb_ref += 1
+
+            self.cp.new_montant.value = f"{somme}"
+            total = int(somme - (somme * int(self.cp.new_remise.value) / 100))
+            self.cp.new_lettres.value = ecrire_en_lettres(total)
+            self.cp.new_nb_ref.value = f"{nb_ref} ligne(s)"
+
+        for widget in (self.cp.new_nb_ref, self.cp.new_montant, self.cp.new_lettres):
+            widget.update()
+
+        self.cp.new_table.update()
+
+
 class Devis(ft.Container):
     def __init__(self, cp: object):
         super().__init__(expand=True)
@@ -229,12 +355,12 @@ class Devis(ft.Container):
         self.table = ft.DataTable(
             **datatable_style,
             columns=[
+                ft.DataColumn(ft.Text("")),
                 ft.DataColumn(ft.Text("Date".upper())),
                 ft.DataColumn(ft.Text("numero".upper())),
                 ft.DataColumn(ft.Text("client".upper())),
                 ft.DataColumn(ft.Text("Montant".upper())),
-                ft.DataColumn(ft.Text("statut")),
-                ft.DataColumn(ft.Text("")),
+                ft.DataColumn(ft.Text("Actions".upper())),
             ]
         )
         self.main_window = ft.Container(
@@ -301,7 +427,7 @@ class Devis(ft.Container):
         self.new_objet = ft.TextField(
             **field_style, width=300, label="Objet du devis",
         )
-        self.new_client = ft.Dropdown(**drop_style, label="Client", width=400, prefix_icon=ft.icons.PERSON_SEARCH_OUTLINED)
+        self.new_client = ft.Dropdown(**drop_style, label="Client", width=400, prefix_icon=ft.icons.PERSON_SEARCH_OUTLINED, on_change=self.on_change_new_client)
         self.new_nb_ref = ft.Text("", size=12, font_family="Poppins Medium", italic=True, color="grey")
         self.new_table = ft.ListView(expand=True, divider_thickness=1, spacing=10)
         self.new_num = ft.Text("", size=12, font_family="Poppins Medium", color="white", )
@@ -320,9 +446,10 @@ class Devis(ft.Container):
                                            prefix_icon=ft.icons.LOCATION_ON_OUTLINED)
         self.new_delai = ft.TextField(**field_style, width=150, label="Délai livraison",
                                        prefix_icon=ft.icons.TIMELAPSE_OUTLINED)
-        self.new_remise = ft.TextField(**numbers_field_style, width=110, label="remise",
-                                        prefix_icon=ft.icons.KEYBOARD_DOUBLE_ARROW_DOWN)
-        self.bt_create_dev = AnyButton(FIRST_COLOR, "check", "Créer devis", "white", 180, None)
+        self.bt_dim_new_rem = MiniCtButton(ft.icons.KEYBOARD_ARROW_LEFT_OUTLINED, "Réduire", None, self.put_new_remise_down)
+        self.bt_add_new_rem = MiniCtButton(ft.icons.KEYBOARD_ARROW_RIGHT_OUTLINED, "AUgmenter", None, self.put_new_remise_up)
+        self.new_remise = ft.TextField(**readonly_field_style, width=60, label="remise", value="0")
+        self.bt_create_dev = AnyButton(FIRST_COLOR, "check", "Créer devis", "white", 180, self.create_new_devis)
         self.new_window = ft.Card(
             elevation=20, surface_tint_color="#f0f0f6", width=900, height=650,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
@@ -377,7 +504,7 @@ class Devis(ft.Container):
                                     ft.Stack(
                                         controls=[
                                             ft.Container(
-                                                height=240, padding=ft.padding.only(10, 3, 10, 3),
+                                                height=220, padding=ft.padding.only(10, 3, 10, 3),
                                                 border_radius=16,
                                                 expand=True,
                                                 border=ft.border.all(1, "grey"), content=self.new_table
@@ -393,7 +520,9 @@ class Devis(ft.Container):
                                     ),
                                     ft.Row([self.new_objet]),
                                     ft.Row([self.new_paiement, self.new_delai, self.new_point_liv,
-                                            self.new_validite, self.new_remise]),
+                                            self.new_validite,
+                                            ft.Row([self.bt_dim_new_rem,  self.new_remise, self.bt_add_new_rem], spacing=0)
+                                            ]),
                                     self.new_notabene,
                                     ft.Row([self.new_montant, self.new_lettres]),
                                     self.bt_create_dev
@@ -455,8 +584,13 @@ class Devis(ft.Container):
         self.edit_validite = ft.TextField(**numbers_field_style, width=120, label="validité", prefix_icon=ft.icons.EVENT_AVAILABLE)
         self.edit_point_liv = ft.TextField(**field_style, width=200, label="pt. livraison", prefix_icon=ft.icons.LOCATION_ON_OUTLINED)
         self.edit_delai = ft.TextField(**field_style, width=150, label="Délai livraison", prefix_icon=ft.icons.TIMELAPSE_OUTLINED)
-        self.edit_remise = ft.TextField(**numbers_field_style, width=110, label="remise", prefix_icon=ft.icons.KEYBOARD_DOUBLE_ARROW_DOWN)
-        self.bt_valid_modif = AnyButton(FIRST_COLOR, "check", "Valider Modifications", "white", 230, None)
+        self.bt_dim_edit_rem = MiniCtButton(ft.icons.KEYBOARD_ARROW_LEFT_OUTLINED, "Réduire", None,
+                                           self.put_edit_remise_down)
+        self.bt_add_edit_rem = MiniCtButton(ft.icons.KEYBOARD_ARROW_RIGHT_OUTLINED, "AUgmenter", None,
+                                           self.put_edit_remise_up)
+        self.edit_remise = ft.TextField(**readonly_field_style, width=60, label="remise", value="0")
+        self.bt_valid_modif = AnyButton(FIRST_COLOR, "check", "Valider Modifications", "white", 230, self.update_devis)
+        self.bt_print_options = AnyButton(FIRST_COLOR, "print_outlined", "Imprimer devis", "white", 230, self.open_impression_window)
         self.edit_window = ft.Card(
             elevation=20, surface_tint_color="#f0f0f6", width=900, height=650,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
@@ -526,10 +660,10 @@ class Devis(ft.Container):
                                     ),
                                     self.edit_objet,
                                     ft.Row([self.edit_paiement, self.edit_delai, self.edit_point_liv,
-                                            self.edit_validite, self.edit_remise]),
+                                            self.edit_validite, ft.Row([self.bt_dim_edit_rem,  self.edit_remise, self.bt_add_edit_rem], spacing=0)]),
                                     self.edit_notabene,
                                     ft.Row([self.edit_montant, self.edit_lettres]),
-                                    self.bt_valid_modif
+                                    ft.Row([self.bt_valid_modif, self.bt_print_options], spacing=20)
                                 ]
                             )
                         )
@@ -575,9 +709,116 @@ class Devis(ft.Container):
             )
         )
 
+        # facture window ...
+        self.fac_num_devis = ft.Text("", size=12, font_family="Poppins Medium", color="white")
+        self.bc_client = ft.TextField(**field_style, label="BC client", width=270, prefix_icon=ft.icons.CONTENT_PASTE_OUTLINED)
+        self.ov_client = ft.TextField(**field_style, label="OV", width=270, prefix_icon=ft.icons.COPY_ALL_OUTLINED)
+        self.facture_window = ft.Card(
+            elevation=20, surface_tint_color="#f0f0f6", width=300, height=300,
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
+            scale=ft.transform.Scale(0), expand=True,
+            animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
+            content=ft.Container(
+                padding=10, bgcolor="#f0f0f6",
+                content=ft.Container(
+                    padding=10, border_radius=16, bgcolor="white",
+                    content=ft.Column(
+                        controls=[
+                            ft.Column(
+                                controls=[
+                                    ft.Row(
+                                        controls=[
+                                            ft.Text("Facturer devis".upper(), size=14, font_family="Poppins Medium"),
+                                            ft.IconButton("close", FIRST_COLOR, scale=0.6, bgcolor="#f2f2f2", on_click=self.close_facture_window)
+                                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                                    ),
+                                    ft.Divider(height=1, thickness=1),
+                                    ft.Divider(height=1, color=ft.colors.TRANSPARENT),
+                                    ft.Container(
+                                        padding=ft.padding.only(10, 3, 10, 3), bgcolor=SECOND_COLOR, border_radius=10,
+                                        content=ft.Row([self.fac_num_devis], alignment=ft.MainAxisAlignment.CENTER)
+                                    ),
+                                    self.bc_client, self.ov_client
+                                ]
+                            ),
+                            AnyButton(FIRST_COLOR, "check", "Valider facturation", "white", 270, self.facturer_devis)
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                    )
+                )
+            )
+        )
+
+        # options d'impression window
+        self.regime = ft.RadioGroup(
+            content=ft.Row(
+                controls=[
+                    ft.Radio(
+                        **radio_style, value="S", label="Simplifié".upper()
+                    ),
+                    ft.Radio(
+                        **radio_style, value="R", label="Réel".upper()
+                    )
+                ]
+            )
+        )
+        self.tva = ft.Checkbox(
+            label_style=ft.TextStyle(size=12, font_family="Poppins Medium"), active_color="white", check_color=FIRST_COLOR,
+            label="TVA", label_position=ft.LabelPosition.RIGHT
+        )
+        self.ir = ft.Checkbox(
+            label_style=ft.TextStyle(size=12, font_family="Poppins Medium"), active_color="white", check_color=FIRST_COLOR,
+            label="IR", label_position=ft.LabelPosition.RIGHT
+        )
+        self.impression_window = ft.Card(
+            elevation=20, surface_tint_color="#f0f0f6", width=350, height=320,
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
+            scale=ft.transform.Scale(0), expand=True,
+            animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
+            content=ft.Container(
+                padding=10, bgcolor="#f0f0f6",
+                content=ft.Container(
+                    padding=10, border_radius=16, bgcolor="white",
+                    content=ft.Column(
+                        controls=[
+                            ft.Column(
+                                controls=[
+                                    ft.Row(
+                                        controls=[
+                                            ft.Text("Options d'impressions".upper(), size=14, font_family="Poppins Medium"),
+                                            ft.IconButton("close", FIRST_COLOR, scale=0.6, bgcolor="#f2f2f2", on_click=self.close_impression_window)
+                                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                                    ),
+                                    ft.Divider(height=1, thickness=1),
+                                ],spacing=0
+                            ),
+                            ft.Divider(height=3, color=ft.colors.TRANSPARENT),
+                            ft.Column(
+                                controls=[
+                                    ft.Text("régime".upper(), size=11,font_family="Poppins Bold"),
+                                    ft.Divider(height=1, thickness=1),
+                                ],spacing=0
+                            ),
+                            self.regime,
+                            ft.Divider(height=3, color=ft.colors.TRANSPARENT),
+                            ft.Column(
+                                controls=[
+                                    ft.Text("TVA et IR".upper(), size=11, font_family="Poppins Bold"),
+                                    ft.Divider(height=1, thickness=1),
+                                ], spacing=0
+                            ),
+                            ft.Row([self.tva, self.ir]),
+                            ft.Divider(height=1, color=ft.colors.TRANSPARENT),
+                            AnyButton(FIRST_COLOR, ft.icons.LOCAL_PRINTSHOP_OUTLINED, "Imprimer", "white", 280, None)
+                        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                    )
+                )
+            )
+        )
+
         self.content = ft.Stack(
             controls=[
-                self.main_window, self.new_window, self.new_add_ref_window, self.edit_window, self.edit_ref_window,
+                self.main_window, self.new_window, self.new_add_ref_window, self.edit_window,
+                self.edit_ref_window, self.facture_window, self.impression_window
             ], alignment=ft.alignment.center
         )
         self.load_datas()
@@ -586,6 +827,7 @@ class Devis(ft.Container):
     def load_lists(self):
         datas = be.all_references()
 
+        # on charge liste des articles pour les creations de devis ...
         for widget in self.new_table_add_ref.controls[:]:
             self.new_table_add_ref.controls.remove(widget)
 
@@ -594,41 +836,55 @@ class Devis(ft.Container):
                 OneArticle(self, data["reference"], data["designation"], data["prix"])
             )
 
-        for widget in self.new_table_add_ref.controls[:]:
-            self.new_table_add_ref.controls.remove(widget)
+        # on charge liste des articles pour les modifications de devis ...
+        for widget in self.table_edit_ref.controls[:]:
+            self.table_edit_ref.controls.remove(widget)
 
         for data in datas:
             self.table_edit_ref.controls.append(
                 AddOneArticle(self, data["reference"], data["designation"], data["prix"])
             )
 
+        # on charge la liste des clients ...
+        clients = be.all_clients()
+        for client in clients:
+            self.new_client.options.append(
+                ft.dropdown.Option(client["nom"])
+            )
+
     def load_datas(self):
         datas = be.all_devis()
         self.results.value = f"{len(datas)} Résultat(s)"
+
         for row in self.table.rows[:]:
             self.table.rows.remove(row)
 
         for data in datas:
             if data["statut"].lower() != "non facturé":
-                icone = ft.icons.CHECK_CIRCLE
-                couleur = "green"
+                icone = ft.icons.CREDIT_SCORE_ROUNDED
+                couleur = ft.colors.DEEP_ORANGE
+                visible = False
             else:
                 icone = None
                 couleur = None
+                visible = True
+
+            bill_button = CtButton(ft.icons.ADD_CARD, "Facturer devis", data, self.open_facture_window)
+            bill_button.visible = visible
 
             self.table.rows.append(
                 ft.DataRow(
                     cells=[
+                        ft.DataCell(ft.Icon(icone, couleur, 20)),
                         ft.DataCell(ft.Text(data["date"])),
                         ft.DataCell(ft.Text(data["numero"])),
                         ft.DataCell(ft.Text(data["client"])),
                         ft.DataCell(ft.Text(ajout_separateur(data["montant"]))),
-                        ft.DataCell(ft.Icon(icone, couleur, 16)),
                         ft.DataCell(
                             ft.Row(
                                 controls=[
                                     CtButton("edit_outlined", "Modifier", data, self.open_edit_window),
-                                    CtButton(ft.icons.ADD_BUSINESS_OUTLINED, "Facturer", data, None)
+                                    bill_button
                                 ], alignment=ft.MainAxisAlignment.END, spacing=2,
                             )
                         )
@@ -657,25 +913,30 @@ class Devis(ft.Container):
 
         for data in filtered_datas:
             if data["statut"].lower() != "non facturé":
-                icone = ft.icons.CHECK_CIRCLE
-                couleur = "green"
+                icone = ft.icons.CREDIT_SCORE_ROUNDED
+                couleur = ft.colors.DEEP_ORANGE
+                visible = False
             else:
                 icone = None
                 couleur = None
+                visible = True
+
+            bill_button = CtButton(ft.icons.ADD_CARD, "Facturer devis", data, self.open_facture_window)
+            bill_button.visible = visible
 
             self.table.rows.append(
                 ft.DataRow(
                     cells=[
+                        ft.DataCell(ft.Icon(icone, couleur, 20)),
                         ft.DataCell(ft.Text(data["date"])),
                         ft.DataCell(ft.Text(data["numero"])),
                         ft.DataCell(ft.Text(data["client"])),
                         ft.DataCell(ft.Text(ajout_separateur(data["montant"]))),
-                        ft.DataCell(ft.Icon(icone, couleur, 18)),
                         ft.DataCell(
                             ft.Row(
                                 controls=[
                                     CtButton("edit_outlined", "Modifier", data, self.open_edit_window),
-                                    CtButton(ft.icons.ADD_BUSINESS_OUTLINED, "Facturer", data, None)
+                                    bill_button
                                 ], alignment=ft.MainAxisAlignment.END, spacing=2,
                             )
                         )
@@ -714,7 +975,6 @@ class Devis(ft.Container):
                 OneArticle(self, data["reference"], data["designation"], data["prix"])
             )
         self.new_table_add_ref.update()
-
 
     def open_new_window(self, e):
         self.new_window.scale = 1
@@ -755,11 +1015,11 @@ class Devis(ft.Container):
         if e.control.data["statut"].lower() == "facturé":
             self.edit_bt_facture.content = ft.Row(
                 controls=[
-                    ft.Icon(ft.icons.CHECK_CIRCLE_OUTLINE_OUTLINED, color="white", size=16),
+                    ft.Icon(ft.icons.CHECK, color="white", size=16),
                     ft.Text("facturé".upper(), size=12, font_family="Poppins Medium", color="white",)
                 ], spacing=5
             )
-            self.edit_bt_facture.bgcolor = ft.colors.LIGHT_GREEN
+            self.edit_bt_facture.bgcolor = ft.colors.GREEN
             self.edit_bt_facture.update()
             self.bt_valid_modif.visible = False
             self.bt_valid_modif.update()
@@ -803,3 +1063,326 @@ class Devis(ft.Container):
     def open_new_add_ref_window(self, e):
         self.new_add_ref_window.scale = 1
         self.new_add_ref_window.update()
+
+    # A chaque fois que le client change
+    def on_change_new_client(self, e):
+        id_client = be.id_client_by_name(self.new_client.value)
+        numero_de_devis = be.find_devis_num(id_client)
+        self.new_num.value = f"{numero_de_devis}"
+        self.new_num.update()
+
+    # A chaque changement de remise
+    def put_new_remise_up(self, e):
+        anc_remise = int(self.new_remise.value)
+
+        next_remise = anc_remise + 1
+        self.new_remise.value = f"{next_remise}"
+        self.new_remise.update()
+
+        total = 0
+        for widget in self.new_table.controls[:]:
+            total += (int(widget.art_qte.value) * int(widget.art_prix.value))
+
+        montant_remise = total - (total * next_remise / 100)
+        self.new_montant.value = f"{int(montant_remise)}"
+        self.new_lettres.value = ecrire_en_lettres(int(montant_remise))
+
+        for widget in (self.new_lettres, self.new_montant):
+            widget.update()
+
+    def put_new_remise_down(self, e):
+        anc_remise = int(self.new_remise.value)
+
+        if anc_remise == 0:
+            next_remise = 0
+        else:
+            next_remise = anc_remise - 1
+
+        self.new_remise.value = f"{next_remise}"
+        self.new_remise.update()
+        total = 0
+        for widget in self.new_table.controls[:]:
+            total += (int(widget.art_qte.value) * int(widget.art_prix.value))
+
+        montant_remise = total - (total * next_remise / 100)
+        self.new_montant.value = f"{int(montant_remise)}"
+        self.new_lettres.value = ecrire_en_lettres(int(montant_remise))
+
+        for widget in (self.new_lettres, self.new_montant):
+            widget.update()
+
+    # A chaque changement de remise dans la modificatyion du devis
+    def put_edit_remise_up(self, e):
+        anc_remise = int(self.edit_remise.value)
+        next_remise = anc_remise + 1
+
+        self.edit_remise.value = f"{next_remise}"
+        self.edit_remise.update()
+        total = 0
+        for widget in self.edit_table.controls[:]:
+            total += (int(widget.art_qte.value) * int(widget.art_prix.value))
+
+        montant_remise = total - (total * next_remise / 100)
+        self.edit_montant.value = f"{int(montant_remise)}"
+        self.edit_lettres.value = ecrire_en_lettres(int(montant_remise))
+
+        for widget in (self.edit_lettres, self.edit_montant):
+            widget.update()
+
+    def put_edit_remise_down(self, e):
+        anc_remise = int(self.edit_remise.value)
+
+        if anc_remise == 0:
+            next_remise = 0
+        else:
+            next_remise = anc_remise - 1
+
+        self.edit_remise.value = f"{next_remise}"
+        self.edit_remise.update()
+        total = 0
+        for widget in self.edit_table.controls[:]:
+            total += (int(widget.art_qte.value)*int(widget.art_prix.value))
+
+        montant_remise = total - (total*next_remise/100)
+        self.edit_montant.value = f"{int(montant_remise)}"
+        self.edit_lettres.value = ecrire_en_lettres(int(montant_remise))
+
+        for widget in (self.edit_lettres, self.edit_montant):
+            widget.update()
+
+    # Création d'un nouveau devis
+    def create_new_devis(self, e):
+
+        if self.new_client.value == "" or self.new_client.value is None:
+            self.cp.box.title.value = "Erreur"
+            self.cp.box.content.value = "Cleint obligatoire"
+            self.cp.box.open = True
+            self.cp.box.update()
+        else:
+            for row in self.new_table.controls[:]:
+                be.add_devis_details(self.new_num.value, row.ref, int(row.art_qte.value), int(row.art_prix.value))
+
+            new_date = datetime.date.today()
+            id_client = be.id_client_by_name(self.new_client.value)
+            objet = self.new_objet.value if self.new_objet.value is not None else ""
+            note_bene = self.new_notabene.value if self.new_notabene.value is not None else ""
+            remise = int(self.new_remise.value) if self.new_remise.value is not None else 0
+            mt_lettres = ""
+            note_bene = self.new_notabene.value if self.new_notabene.value is not None else ""
+            delai = self.new_delai.value if self.new_delai.value is not None else ""
+            point_liv = self.new_point_liv.value if self.new_point_liv.value is not None else ""
+            validite = self.new_validite.value if self.new_validite.value is not None else 0
+            paiement = int(self.new_paiement.value) if self.new_paiement.value is not None else 0
+
+            be.add_devis(
+                self.new_num.value, str(new_date), id_client, int(self.new_montant.value),
+                objet, remise, mt_lettres, note_bene, delai, point_liv, validite, paiement
+            )
+
+            self.cp.box.title.value = "Validé"
+            self.cp.box.content.value = f"Devis N° {self.new_num.value} créé"
+            self.cp.box.open = True
+            self.cp.box.update()
+
+            for widget in self.new_table.controls[:]:
+                self.new_table.controls.remove(widget)
+
+            self.new_table.update()
+
+            self.load_datas()
+            self.table.update()
+            self.results.update()
+
+            for widget in (self.new_client, self.new_num, self.new_objet, self.new_notabene, self.new_delai, self.new_point_liv, self.new_validite):
+                widget.value = None
+                widget.update()
+
+            for widget in (self.new_montant, self.new_remise):
+                widget.value = "0"
+                widget.update()
+
+            self.new_lettres.value = ecrire_en_lettres(int(self.new_montant.value))
+            self.new_lettres.update()
+
+    def update_devis(self, e):
+        num_devis = self.edit_num.value
+
+        # on met à jour la table devis
+        mt = self.edit_montant.value
+
+        be.update_devis(
+            mt, int(self.edit_remise.value), self.edit_notabene.value, self.edit_delai.value, self.edit_point_liv.value,
+            int(self.edit_validite.value), int(self.edit_paiement.value), num_devis
+        )
+
+        # on supprime les details devis précéédents
+        be.delete_devis_details(num_devis)
+
+        # on recrée les nouveaux détails
+        for widget in self.edit_table.controls[:]:
+            be.add_devis_details(num_devis, widget.ref, int(widget.art_qte.value), int(widget.art_prix.value))
+
+        self.edit_window.scale = 0
+        self.edit_window.update()
+
+        self.load_datas()
+        self.table.update()
+        self.results.update()
+
+        self.cp.box.title.value = "Validé"
+        self.cp.box.content.value = "devis mis à jour".capitalize()
+        self.cp.box.open = True
+        self.cp.box.update()
+
+    def open_facture_window(self, e):
+        self.fac_num_devis.value = e.control.data["numero"]
+        self.fac_num_devis.update()
+        self.facture_window.scale = 1
+        self.facture_window.update()
+
+    def close_facture_window(self, e):
+        self.bc_client.value = None
+        self.bc_client.update()
+        self.ov_client.value = None
+        self.ov_client.update()
+        self.facture_window.scale = 0
+        self.facture_window.update()
+
+    # Factuer devis
+    def facturer_devis(self, e):
+        details = be.find_devis_details(self.fac_num_devis.value)
+
+        # On vérifie les si le stock est disponible pour chaque produit de natuire stock ...
+        count_nc = 0
+        for row in details:
+            if be.find_nature_ref(row["reference"]) == "stock":
+                ancien_stock = be.find_stock_ref(row["reference"])
+
+                if ancien_stock < row["qte"]:
+                    count_nc += 1
+
+        if count_nc == 0:
+            info_facture = be.show_info_devis(self.fac_num_devis.value)
+            numero_facture = be.find_facture_num(info_facture["client"])
+
+            # table facture
+            be.add_facture(
+                numero_facture, info_facture["client"], info_facture["montant"], info_facture["objet"], info_facture["remise"], "",
+                self.fac_num_devis.value, self.bc_client.value, self.ov_client.value, info_facture["paiement"])
+
+            # Table details facture
+            for row in details:
+                be.add_details_facture(numero_facture, row["reference"], row["qte"], row["prix"])
+                # Mise à jour du stock
+                if be.find_nature_ref(row["reference"]) == "stock":
+                    ancien_stock = be.find_stock_ref(row["reference"])
+                    nouveau_stock = ancien_stock - row["qte"]
+                    be.update_stock(nouveau_stock, row["reference"])
+                    be.add_historique(row[2], "S", numero_facture, ancien_stock, row["qte"], nouveau_stock)
+
+            # mise à jour du statut du devis
+            be.maj_statut_devis(self.fac_num_devis.value)
+
+            # remplir les bordereaux de livraison
+            initiales_client = be.search_initiales(info_facture["client"])
+            numero_bordereau = be.find_bordereau_num(initiales_client)
+            be.add_bordereau(numero_bordereau, numero_facture, self.bc_client.value)
+
+            for row in details:
+                be.add_bordereau_details(numero_bordereau, row["reference"], row["qte"], row["prix"])
+
+            self.bc_client.value = None
+            self.bc_client.update()
+            self.ov_client.value = None
+            self.ov_client.update()
+            self.facture_window.scale = 0
+            self.facture_window.update()
+            self.load_datas()
+            self.table.update()
+            self.results.update()
+
+            self.cp.box.title.value = "Validé"
+            self.cp.box.content.value = f"facture N° {numero_facture} générée avec succés"
+            self.cp.box.open = True
+            self.cp.box.update()
+
+        else:
+            self.cp.box.title.value = "Erreur"
+            self.cp.box.content.value = f"Veuiullez vérifier les quantités en stock"
+            self.cp.box.open = True
+            self.cp.box.update()
+
+    def open_impression_window(self, e):
+        self.impression_window.scale = 1
+        self.impression_window.update()
+
+    def close_impression_window(self, e):
+        self.impression_window.scale = 0
+        self.impression_window.update()
+
+    def imprimer_devis(self, e: ft.FilePickerResultEvent):
+        regime = self.regime.value
+        tva = self.tva.value
+        ir = self.ir.value
+
+        # Cas du régime simplifié
+        if self.regime.value == "S":
+
+            # Si la TVA est Active
+            if tva is True:
+                # Erreur
+                self.cp.box.title.value = "Erreur"
+                self.cp.box.content.value = "Pas de TVA dans le régime simplifié"
+                self.cp.box.open = True
+                self.cp.box.update()
+
+            # Si la TVA n'est pas active
+            else:
+                # Si l'IR est active
+                if ir is True:
+                    # Créer un nouveau document Word
+                    doc = Document()
+
+                    # Ajouter une image dans l'en-tête
+                    section = doc.sections[0]
+                    header = section.header
+                    header_paragraph = header.paragraphs[0]
+                    footer = section.footer
+                    footer_paragraph = footer.paragraphs[0]
+
+                    # Ajouter l'image dans l'en-tête
+                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Cm(5))
+                    # Ajouter l'image dans le pied de page
+                    footer_paragraph.add_run().add_picture("assets/images/footer.jpg", width=Cm(5))
+
+                    # Ajouter du contenu au corps du document
+
+
+                    # Sauvegarder le fichier
+                    doc.save("document_avec_image_entete.docx")
+
+                # Si l'IR n'est pos active
+                else:
+                    pass
+
+        # Cas du régime réel
+        else:
+            # Si la TVA est Active
+            if tva is True:
+                if ir is True:
+                    pass
+
+                # Si l'IR n'est pos active
+                else:
+                    pass
+
+            # Si la TVA n'est pas active
+            else:
+                # Si l'IR est active
+                if ir is True:
+                    pass
+
+                # Si l'IR n'est pos active
+                else:
+                    pass
+

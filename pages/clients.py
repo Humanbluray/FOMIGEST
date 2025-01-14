@@ -481,3 +481,6 @@ class Clients(ft.Container):
     def close_factures_window(self, e):
         self.factures_window.scale = 0
         self.factures_window.update()
+
+    def update_devis(self, e):
+        pass

@@ -10,7 +10,7 @@ class ItemMenu(ft.Container):
             on_hover=self.hover_ct,
             shape=ft.BoxShape.RECTANGLE,
             padding=ft.padding.only(10, 9, 0, 9),
-            border_radius=16,
+            border_radius=11,
             scale=ft.transform.Scale(1),
             animate_scale=ft.animation.Animation(300, ft.AnimationCurve.FAST_LINEAR_TO_SLOW_EASE_IN)
         )
