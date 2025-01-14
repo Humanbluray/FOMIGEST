@@ -54,5 +54,5 @@ def main(page: ft.Page):
 
 
 if __name__ == '__main__':
-    ft.app(target=main, assets_dir="assets", route_url_strategy="default")
+    ft.app(target=main, assets_dir="assets", route_url_strategy="default", view=ft.AppView.WEB_BROWSER)
 
