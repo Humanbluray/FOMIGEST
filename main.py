@@ -1,6 +1,8 @@
 import flet as ft
 from pages.landing import Landing
 from pages.welcome import Welcome
+import os
+
 
 # Définir des constantes pour les routes
 WELCOME_ROUTE = "/welcome"
@@ -54,5 +56,6 @@ def main(page: ft.Page):
 
 
 if __name__ == '__main__':
-    ft.app(target=main, assets_dir="assets", route_url_strategy="default", view=ft.AppView.WEB_BROWSER)
+    port = int(os.getenv("PORT", 8080))
+    ft.app(target=main, port=port, view=ft.AppView.WEB_BROWSER)
 
