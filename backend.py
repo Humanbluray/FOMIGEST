@@ -462,9 +462,6 @@ def id_client_by_name(nom):
     return result[0]
 
 
-print(id_client_by_name("AGRECAM"))
-
-
 def add_client(nom, ini, cont, nui, rc, mail, comm):
     conn = sql.connect(my_base)
     cur = conn.cursor()
@@ -652,26 +649,36 @@ def all_factures_by_client_id(client_id):
     cur.execute(
     """
             SELECT id, numero, date, client, montant, remise,
-            (SELECT nom FROM clients WHERE factures.client = clients.id) as client_name,
-            (SELECT sum(montant)  FROM reglement WHERE reglement.facture = factures.numero)
+            (SELECT nom FROM clients WHERE factures.client = clients.id) as client_name
             FROM factures WHERE client = ? 
-    """, (client_id,))
+        """, (client_id,))
+
     res = cur.fetchall()
     final = [
-        {"id": data[0], "numero": data[1], "date": data[2], "client": data[3], "remise": data[5],
-         "nom": data[6], "total": data[4], "regle": data[7] if data[7] is not None else 0} for data in res
+        {
+            "id": data[0], "numero": data[1], "date": data[2], "client": data[3], "remise": data[5],
+            "nom": data[6], "total": data[4], "regle": mt_deja_paye(data[1]), "mt_remise": int(data[4] - (data[4]*data[5]/100)),
+            "reste": int(data[4] - (data[4]*data[5]/100)) - mt_deja_paye(data[1]), "statut": ""
+        }
+        for data in res
     ]
+    for data in final:
+        if data["reste"] == 0:
+            data["statut"] = "soldée"
+        else:
+            data["statut"] = "en cours"
+
     conn.commit()
     conn.close()
     return final
 
-print(len(all_factures_by_client_id(29)))
-for row in all_factures_by_client_id(29):
-    print(row)
-    total = row['total'] - row['total']*row['remise']/100
-    reste = total - row['regle']
-    print(total)
-    print(reste)
+# print(len(all_factures_by_client_id(29)))
+# for row in all_factures_by_client_id(29):
+#     print(row)
+#     total = row['total'] - row['total']*row['remise']/100
+#     reste = total - row['regle']
+#     print(total)
+#     print(reste)
 
 
 # def all_factures_by_client_id(client_id):
@@ -726,13 +733,17 @@ def mt_deja_paye(numero):
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
-    return resultat[0]
+    return resultat[0] if resultat[0] is not None else 0
 
 
-def add_reglement(facture, montant, type, date):
+def add_reglement(facture, montant, typp, date):
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""INSERT INTO reglement values (?,?,?,?,?)""", (cur.lastrowid, facture, montant, type, date))
+    cur.execute(
+        """INSERT INTO reglement values (?,?,?,?,?)""",
+        (cur.lastrowid, facture, montant,
+         typp, date)
+    )
     conn.commit()
     conn.close()
 
@@ -740,17 +751,35 @@ def add_reglement(facture, montant, type, date):
 def all_factures():
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""SELECT numero FROM factures""")
+    cur.execute("""
+        SELECT id, numero, client, montant, objet, remise, devis, bc_client, ov, delai,
+        (SELECT nom FROM clients WHERE clients.id = factures.client) as nom_client
+        FROM factures"""
+    )
     resultat = cur.fetchall()
-
-    r_final = []
-
-    for row in resultat:
-        r_final.append(row[0])
-
+    final = [
+        { "id": data[0], "numero": data[1], "id_client": data[2], "montant": data[3], "objet": data[4], "remise": data[5],
+        "devis": data[6], "bc_client": data[7], "ov": data[8], "delai": data[9], "nom_client": data[10],
+        "regle": mt_deja_paye(data[1]), "mt_remise": int(data[3] - (data[3]*data[5]/100)), "reste": (int(data[3] - (data[3]*data[5]/100))) - mt_deja_paye(data[1])
+          }
+        for data in resultat
+    ]
     conn.commit()
     conn.close()
-    return r_final
+    return final
+
+
+# def add_paiement():
+#     conn = sql.connect(my_base)
+#     cur = conn.cursor()
+#     cur.execute(
+#         """
+#         INSERT INTO r
+#         """
+#     )
+#
+#     conn.commit()
+#     conn.close()
 
 
 def factures_client(id_client):
@@ -786,26 +815,24 @@ def factures_client(id_client):
     return r_final
 
 
-def search_factures_details(numero):
+def factures_details(numero):
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""SELECT id, reference, 
-
-                    (SELECT designation FROM articles WHERE articles.reference = facture_details.reference) as designation,
-
-                    qte, prix FROM facture_details WHERE numero =?""", (numero,))
-
+    cur.execute("""
+        SELECT id, reference, 
+        (SELECT designation FROM articles WHERE articles.reference = facture_details.reference) as designation,
+        qte, prix FROM facture_details WHERE numero =?""", (numero,)
+    )
     resultat = cur.fetchall()
-    r_final = []
-
-    for row in resultat:
-        total = row[3] * row[4]
-        row = row + (total,)
-        r_final.append(row)
-
+    final = [
+        {
+            "id": data[0], "reference": data[1], "designation": data[2], "qte": data[3], "prix": data[4]
+        }
+        for data in resultat
+    ]
     conn.commit()
     conn.close()
-    return r_final
+    return final
 
 
 # table articles
@@ -854,6 +881,19 @@ def all_ref_and_desig():
     conn.close()
     return resultat
 
+
+def all_reglements_by_facture(facture):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute("""SELECT * FROM reglement WHERE facture = ?""", (facture,))
+    resultat = cur.fetchall()
+    final = [
+        {"montant": data[2], "type": data[3], "date": data[4]}
+        for data in resultat
+    ]
+    conn.commit()
+    conn.close()
+    return final
 
 
 def all_references_stock():
@@ -921,10 +961,10 @@ def filtrer_articles(designation, nature):
     return resultat
 
 
-def add_ref(ref, des, nat, qte, prix, unite):
+def add_ref(ref, des, nat, unite):
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""INSERT INTO articles values (?,?,?,?,?,?,?)""", (cur.lastrowid, ref, des, nat, qte, prix, unite))
+    cur.execute("""INSERT INTO articles values (?,?,?,?,?,?,?)""", (cur.lastrowid, ref, des, nat, 0, 0, unite))
     conn.commit()
     conn.close()
 
@@ -1135,9 +1175,13 @@ def all_historique_by_ref(reference):
     cur = conn.cursor()
     cur.execute("""SELECT * FROM historique WHERE reference = ?""", (reference,))
     result = cur.fetchall()
+    final = [
+        {"id": data[0], "reference": data[1], "date": data[2], "mouvement": data[3], "num_mvt": data[4], "qte_avant": data[5], "qte_mvt": data[6], "qte_apres": data[7]}
+        for data in result
+    ]
     conn.commit()
     conn.close()
-    return result
+    return final
 
 
 def all_historique():

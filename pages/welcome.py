@@ -1,4 +1,5 @@
 import flet as ft
+import datetime
 from utils.lateral_menu import Menu
 from utils.constantes import FIRST_COLOR, SECOND_COLOR, THIRD_COLOR
 
@@ -46,8 +47,12 @@ class Welcome(ft.View):
         )
         self.fp_print_devis = ft.FilePicker()
         self.fp_print_facture = ft.FilePicker()
+        self.dp_paiement = ft.DatePicker(
+            first_date=datetime.datetime(year=2025, month=1, day=1),
+            last_date=datetime.datetime(year=2099, month=10, day=1),
+        )
 
-        for widget in (self.box, self.fp_print_devis, self.fp_print_facture):
+        for widget in (self.box, self.fp_print_devis, self.fp_print_facture, self.dp_paiement):
             self.page.overlay.append(widget)
 
         self.controls = [
