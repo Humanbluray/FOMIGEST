@@ -365,59 +365,28 @@ class Devis(ft.Container):
         )
         self.main_window = ft.Container(
             expand=True,
-            padding=ft.padding.only(20, 15, 20, 15), border_radius=10, bgcolor="#f2f2f2",
+            padding=ft.padding.only(20, 15, 20, 15), border_radius=10, bgcolor="white",
             content=ft.Column(
                 controls=[
                     ft.Column(
                         controls=[
-                            ft.Text("Chiffres".upper(), size=13, font_family="Poppins Medium"),
+                            ft.Text("Liste des devis".upper(), size=16, font_family="Poppins Bold"),
                             ft.Divider(height=1, thickness=1),
                         ], spacing=0
                     ),
                     ft.Divider(height=1, color=ft.colors.TRANSPARENT),
                     ft.Row(
                         controls=[
-                            ft.Column(
+                            ft.Row(
                                 controls=[
-                                    ft.Text("Nombre de devis", size=12, font_family="Poppins-Medium", italic=True),
-                                    self.nb_devis
-                                ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                                    self.search, self.results
+                                ]
                             ),
-                            ft.Column(
-                                controls=[
-                                    ft.Text("Devis expirés", size=12, font_family="Poppins-Medium", italic=True),
-                                    self.nb_devis_expires
-                                ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                            ),
-                            ft.Column(
-                                controls=[
-                                    ft.Text("Devis en cours", size=12, font_family="Poppins-Medium", italic=True),
-                                    self.nb_devis_encours
-                                ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                            )
-                        ], spacing=50
+                            AnyButton(FIRST_COLOR, "add", "Créer devis", "white", 175, self.open_new_window)
+                        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                     ),
-                    ft.Container(
-                        padding=10, border_radius=10, bgcolor="white", expand=True,
-                        content=ft.Column(
-                            expand=True,
-                            controls=[
-                                ft.Row(
-                                    controls=[
-                                        ft.Row(
-                                            controls=[
-                                                self.search, self.results
-                                            ]
-                                        ),
-                                        AnyButton(FIRST_COLOR, "add", "Créer devis", "white", 175, self.open_new_window)
-                                    ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
-                                ),
-                                ft.Divider(height=1, color=ft.colors.TRANSPARENT),
-                                ft.ListView(expand=True, controls=[self.table])
-                            ]
-                        )
-                    )
-
+                    ft.Divider(height=1, color=ft.colors.TRANSPARENT),
+                    ft.ListView(expand=True, controls=[self.table])
                 ]
             )
         )
@@ -451,7 +420,7 @@ class Devis(ft.Container):
         self.new_remise = ft.TextField(**readonly_field_style, width=60, label="remise", value="0")
         self.bt_create_dev = AnyButton(FIRST_COLOR, "check", "Créer devis", "white", 180, self.create_new_devis)
         self.new_window = ft.Card(
-            elevation=20, surface_tint_color="#f0f0f6", width=900, height=650,
+            elevation=20, surface_tint_color="#f0f0f6", width=900, height=660,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0), expand=True,
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
@@ -514,7 +483,7 @@ class Devis(ft.Container):
                                                 content=ft.Row([ft.Icon(ft.icons.ADD, color="white")],
                                                                alignment=ft.MainAxisAlignment.CENTER),
                                                 bottom=10, scale=0.8, right=10, tooltip="Ajouter référence",
-                                                opacity=0.95
+                                                opacity=0.80
                                             )
                                         ], alignment=ft.alignment.bottom_right
                                     ),
@@ -761,6 +730,18 @@ class Devis(ft.Container):
                 ]
             )
         )
+        self.banque = ft.RadioGroup(
+            content=ft.Row(
+                controls=[
+                    ft.Radio(
+                        **radio_style, value="CCA", label="CCA".upper()
+                    ),
+                    ft.Radio(
+                        **radio_style, value="AFRILAND", label="AFRILAND".upper()
+                    )
+                ]
+            )
+        )
         self.tva = ft.Checkbox(
             label_style=ft.TextStyle(size=12, font_family="Poppins Medium"), active_color="white", check_color=FIRST_COLOR,
             label="TVA", label_position=ft.LabelPosition.RIGHT
@@ -770,7 +751,7 @@ class Devis(ft.Container):
             label="IR", label_position=ft.LabelPosition.RIGHT
         )
         self.impression_window = ft.Card(
-            elevation=20, surface_tint_color="#f0f0f6", width=350, height=320,
+            elevation=20, surface_tint_color="#f0f0f6", width=350, height=400,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0), expand=True,
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
@@ -794,7 +775,7 @@ class Devis(ft.Container):
                             ft.Divider(height=3, color=ft.colors.TRANSPARENT),
                             ft.Column(
                                 controls=[
-                                    ft.Text("régime".upper(), size=11,font_family="Poppins Bold"),
+                                    ft.Text("choix du régime".upper(), size=11,font_family="Poppins Bold"),
                                     ft.Divider(height=1, thickness=1),
                                 ],spacing=0
                             ),
@@ -807,6 +788,14 @@ class Devis(ft.Container):
                                 ], spacing=0
                             ),
                             ft.Row([self.tva, self.ir]),
+                            ft.Divider(height=1, color=ft.colors.TRANSPARENT),
+                            ft.Column(
+                                controls=[
+                                    ft.Text("Choix de la banque".upper(), size=11, font_family="Poppins Bold"),
+                                    ft.Divider(height=1, thickness=1),
+                                ], spacing=0
+                            ),
+                            self.banque,
                             ft.Divider(height=1, color=ft.colors.TRANSPARENT),
                             AnyButton(FIRST_COLOR, ft.icons.LOCAL_PRINTSHOP_OUTLINED, "Imprimer", "white", 280, None)
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER
@@ -863,14 +852,11 @@ class Devis(ft.Container):
             if data["statut"].lower() != "non facturé":
                 icone = ft.icons.CREDIT_SCORE_ROUNDED
                 couleur = ft.colors.DEEP_ORANGE
-                visible = False
+                bill_button = CtButton(None, "", data, None)
             else:
                 icone = None
                 couleur = None
-                visible = True
-
-            bill_button = CtButton(ft.icons.ADD_CARD, "Facturer devis", data, self.open_facture_window)
-            bill_button.visible = visible
+                bill_button = CtButton(ft.icons.ADD_CARD, "Facturer devis", data, self.open_facture_window)
 
             self.table.rows.append(
                 ft.DataRow(
@@ -885,20 +871,13 @@ class Devis(ft.Container):
                                 controls=[
                                     CtButton("edit_outlined", "Modifier", data, self.open_edit_window),
                                     bill_button
-                                ], alignment=ft.MainAxisAlignment.END, spacing=2,
+                                ], alignment=ft.MainAxisAlignment.END, spacing=0,
                             )
                         )
                     ]
                 )
             )
         datas = be.all_references()
-        # for widget in self.table_articles.controls[:]:
-        #     self.table_articles.controls.remove(widget)
-        #
-        # for data in datas:
-        #     self.table_articles.controls.append(
-        #         OneArticle(self, data["reference"], data["designation"], data["prix"])
-        #     )
 
     def filter_datas(self, e):
         datas = be.all_devis()
@@ -915,14 +894,11 @@ class Devis(ft.Container):
             if data["statut"].lower() != "non facturé":
                 icone = ft.icons.CREDIT_SCORE_ROUNDED
                 couleur = ft.colors.DEEP_ORANGE
-                visible = False
+                bill_button = CtButton(None, "", data, None)
             else:
                 icone = None
                 couleur = None
-                visible = True
-
-            bill_button = CtButton(ft.icons.ADD_CARD, "Facturer devis", data, self.open_facture_window)
-            bill_button.visible = visible
+                bill_button = CtButton(ft.icons.ADD_CARD, "Facturer devis", data, self.open_facture_window)
 
             self.table.rows.append(
                 ft.DataRow(
@@ -937,7 +913,7 @@ class Devis(ft.Container):
                                 controls=[
                                     CtButton("edit_outlined", "Modifier", data, self.open_edit_window),
                                     bill_button
-                                ], alignment=ft.MainAxisAlignment.END, spacing=2,
+                                ], alignment=ft.MainAxisAlignment.END, spacing=0,
                             )
                         )
                     ]

@@ -13,7 +13,7 @@ search_field_style: dict = dict(
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
     hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
     text_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
-    border_radius=8, border_width=1, cursor_color=SECOND_COLOR, focused_border_width=2,
+    border_radius=12, border_width=1, cursor_color=SECOND_COLOR, focused_border_width=2,
     capitalization=ft.TextCapitalization.CHARACTERS
 )
 field_style: dict = dict(
@@ -23,7 +23,7 @@ field_style: dict = dict(
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
     hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
     text_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
-    border_radius=8, border_width=1, cursor_color=SECOND_COLOR, focused_border_width=2,
+    border_radius=12, border_width=1, cursor_color=SECOND_COLOR, focused_border_width=2,
     capitalization=ft.TextCapitalization.CHARACTERS
 )
 numbers_field_style: dict = dict(
@@ -33,7 +33,7 @@ numbers_field_style: dict = dict(
     label_style=ft.TextStyle(size=11, font_family="Poppins Medium", color="black"),
     hint_style=ft.TextStyle(size=11, font_family="Poppins Medium"),
     text_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
-    border_radius=8, border_width=1, cursor_color=SECOND_COLOR,
+    border_radius=12, border_width=1, cursor_color=SECOND_COLOR,
     focused_border_width=2,
     input_filter=ft.NumbersOnlyInputFilter(), text_align=ft.TextAlign.RIGHT.RIGHT
 )
@@ -53,7 +53,7 @@ inactive_field_style: dict = dict(
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
     hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
     text_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
-    border_radius=8, border_width=1,
+    border_radius=12, border_width=1,
     capitalization=ft.TextCapitalization.CHARACTERS
 )
 readonly_field_style: dict = dict(
@@ -63,7 +63,26 @@ readonly_field_style: dict = dict(
     label_style=ft.TextStyle(size=11, font_family="Poppins Medium", color="black"),
     hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
     text_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
-    border_radius=8, border_width=1, focused_border_width=2,
+    border_radius=12, border_width=1, focused_border_width=2,
+    capitalization=ft.TextCapitalization.CHARACTERS
+)
+readonly_field_style2: dict = dict(
+    dense=True, read_only=True,
+    border_color="#f2f2f2", bgcolor="#f2f2f2",
+    content_padding=12, cursor_height=24,
+    label_style=ft.TextStyle(size=11, font_family="Poppins Medium", color="black"),
+    hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
+    text_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
+    border_radius=12, border_width=1, focused_border_width=2,
+    capitalization=ft.TextCapitalization.CHARACTERS
+)
+readonly_date_style: dict = dict(
+    dense=True, read_only=True,
+    content_padding=12, cursor_height=24,
+    label_style=ft.TextStyle(size=11, font_family="Poppins Medium", color="black"),
+    hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
+    text_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
+    border_radius=12, border_width=1, focused_border_width=2,
     capitalization=ft.TextCapitalization.CHARACTERS
 )
 
@@ -73,7 +92,7 @@ date_field_style: dict = dict(
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
     hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
     text_style=ft.TextStyle(size=13, font_family="Poppins Medium"),
-    border_radius=8, border_width=1, cursor_color=SECOND_COLOR,
+    border_radius=12, border_width=1, cursor_color=SECOND_COLOR,
     capitalization=ft.TextCapitalization.CHARACTERS
 )
 

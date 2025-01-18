@@ -2,6 +2,9 @@ import flet as ft
 from utils.constantes import FIRST_COLOR, SECOND_COLOR
 from pages.clients import Clients
 from pages.devis import Devis
+from pages.stock import Stock
+from pages.factures import Factures
+from pages.fournisseurs import Fournisseurs
 
 
 class ItemMenu(ft.Container):
@@ -10,7 +13,7 @@ class ItemMenu(ft.Container):
             on_hover=self.hover_ct,
             shape=ft.BoxShape.RECTANGLE,
             padding=ft.padding.only(10, 9, 0, 9),
-            border_radius=11,
+            border_radius=16,
             scale=ft.transform.Scale(1),
             animate_scale=ft.animation.Animation(300, ft.AnimationCurve.FAST_LINEAR_TO_SLOW_EASE_IN)
         )
@@ -21,7 +24,7 @@ class ItemMenu(ft.Container):
         self.selected_text_color = selected_text_color
 
         self.visuel = ft.Icon(my_icon, size=18, color=selected_icon_color)
-        self.name = ft.Text(title, size=11, font_family="Poppins Medium", color=selected_text_color)
+        self.name = ft.Text(title, size=12, font_family="Poppins Medium", color=selected_text_color)
 
         self.content = ft.Row(controls=[self.visuel, self.name], alignment=ft.MainAxisAlignment.START)
 
@@ -156,6 +159,20 @@ class Menu(ft.Card):
         if e.control.name.value == "devis".upper():
             self.cp.contenu.content.controls.append(Devis(self.cp))
             self.cp.update()
+
+        if e.control.name.value == "stock".upper():
+            self.cp.contenu.content.controls.append(Stock(self.cp))
+            self.cp.update()
+
+        if e.control.name.value == "factures".upper():
+            self.cp.contenu.content.controls.append(Factures(self.cp))
+            self.cp.update()
+
+        if e.control.name.value == "fournisseurs".upper():
+            self.cp.contenu.content.controls.append(Fournisseurs(self.cp))
+            self.cp.update()
+
+
 
 
 

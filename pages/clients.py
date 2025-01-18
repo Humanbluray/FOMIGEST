@@ -6,96 +6,78 @@ from utils.useful_functions import ajout_separateur
 
 class FicheClient(ft.Container):
     def __init__(self, cp: object, infos: dict):
-        super().__init__(padding=10, bgcolor="white", border=ft.border.all(1, "#f0f0f6"), border_radius=10)
+        super().__init__(padding=10, bgcolor="white", border_radius=10)
         self.cp = cp
         self.infos = infos
 
         statut = "A jour"
+        self.couleur = "green"
         nb_factures = 0
-        total_factures = 0
+        self.total_impaye = 0
+        self.nb_total_fac = 0
+        self.nb_total_fac_impaye = 0
+
         all_factures = be.all_factures_by_client_id(infos["id"])
 
         for fact in all_factures:
-            total = fact["total"] - (fact["total"] * (fact["remise"]/100))
-            if int(total) > int(fact["regle"]):
+            self.nb_total_fac += 1
+
+            if fact["mt_remise"] >= fact["regle"]:
+                self.total_impaye += fact["mt_remise"] - fact["regle"]
                 nb_factures += 1
-                total_factures += (fact["total"] - fact["regle"])
-                statut = "Pas à jour"
-            else:
-                statut = "à jour"
+                self.nb_total_fac_impaye += 1
+
+        if self.total_impaye > 0:
+            statut = "Pas à jour"
+            self.couleur = "red"
+            icone = ft.icons.INDETERMINATE_CHECK_BOX_OUTLINED
+        else:
+            statut = "à jour"
+            self.couleur = "green"
+            icone = ft.icons.CHECK_CIRCLE
 
         self.statut = statut.upper()
 
         self.notif = ft.Container(
             shape=ft.BoxShape.CIRCLE, bgcolor="red", padding=5,
             content=ft.Row(
-                [ft.Text(f"{nb_factures}", size=10, color="white", font_family="Poppins Bold")],
+                [ft.Text(f"{self.nb_total_fac_impaye}", size=10, color="white", font_family="Poppins Bold")],
                 alignment=ft.MainAxisAlignment.CENTER)
         )
 
-        if nb_factures == 0:
+        if self.nb_total_fac_impaye == 0:
             self.notif.visible = False
         else:
             self.notif.visible = True
 
-        self.content = ft.Column(
+        self.content = ft.Row(
             controls=[
-                ft.Column(
-                    controls=[
-                        ft.Row(
-                            controls=[
-                                ft.Text(f"{infos['nom']}", size=12, font_family="Poppins Medium",
-                                        weight=ft.FontWeight.BOLD),
-                                self.notif
-                            ]
-                        ),
-                        ft.Divider(height=1, thickness=1),
-                    ], spacing=0
-                ),
-                ft.Divider(height=1, color=ft.colors.TRANSPARENT),
                 ft.Row(
                     controls=[
-                        ft.Row(
-                            controls=[
-                                ft.Column(
-                                    controls=[
-                                        ft.Row(
-                                            controls=[
-                                                ft.Icon(ft.icons.REAL_ESTATE_AGENT, color=SECOND_COLOR, size=15),
-                                                ft.Text(f"Total impayées:".upper(), size=12,
-                                                        font_family="Poppins Medium"),
-                                            ]
-                                        ),
-                                        ft.Text(f"{ajout_separateur(total_factures)} XAF", size=11,
-                                                font_family="Poppins Medium", color="grey", )
-                                    ],spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                                ),
-                                ft.Column(
-                                    controls=[
-                                        ft.Row(
-                                            controls=[
-                                                ft.Icon(ft.icons.FMD_GOOD, color="black",
-                                                        size=15),
-                                                ft.Text(f"Statut:".upper(), size=12,
-                                                        font_family="Poppins Medium"),
-                                            ]
-                                        ),
-                                        ft.Text(f"{self.statut}",
-                                                size=11,
-                                                font_family="Poppins Medium", color="grey", )
-                                    ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                                ),
-                            ], spacing=30
+                        ft.TextField(
+                            **readonly_field_style, label="Nom du client", value=infos["nom"],
+                            prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED, width=400, tooltip=infos["nom"]
                         ),
                         ft.Row(
                             controls=[
-                                CtButton("edit_outlined", "Modifier", infos, self.open_edit_window),
-                                CtButton(ft.icons.PAYMENTS_OUTLINED, "Factures", infos, self.voir_factures)
-                            ], spacing=2
+                                ft.Icon(icone, self.couleur, 16),
+                                ft.TextField(
+                                    **readonly_field_style, label="statut", value=self.statut, width=170)
+                            ], spacing=0
+                        ),
+                        ft.TextField(
+                            **readonly_field_style, width=180, prefix_icon=ft.icons.REAL_ESTATE_AGENT_OUTLINED,
+                            value=f"{ajout_separateur(self.total_impaye)} XAF"
                         )
-                    ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                    ]
+                ),
+                ft.Row(
+                    controls=[
+                        CtButton("edit_outlined", "Modifier", infos, self.open_edit_window),
+                        CtButton(ft.icons.CREDIT_CARD_OUTLINED, "Factures", infos, self.voir_factures)
+                    ], spacing=2
                 )
-            ]
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
         )
 
     def open_edit_window(self, e):
@@ -131,15 +113,15 @@ class FicheClient(ft.Container):
 
         for data in datas:
             total_factures += 1
-            total_reste += int(data["total"] - (data["total"]*data["remise"]/100) - data["regle"])
+            total_reste += data["reste"]
 
             if int(total_reste) > 0:
                 total_impayes += 1
-                my_icon = ft.icons.NOT_ACCESSIBLE_ROUNDED
+                my_icon = ft.icons.STOP_CIRCLE_OUTLINED
                 my_color = ft.colors.RED
             else:
                 my_icon = ft.icons.CHECK_CIRCLE
-                my_color = ft.colors.GREEN
+                my_color = ft.colors.BLACK
 
             self.cp.table_factures.rows.append(
                 ft.DataRow(
@@ -149,18 +131,12 @@ class FicheClient(ft.Container):
                         ft.DataCell(ft.Text(ajout_separateur(data["total"]))),
                         ft.DataCell(ft.Text(ajout_separateur(data["regle"]))),
                         ft.DataCell(ft.Text(ajout_separateur(data["total"]- data["regle"]))),
-                        ft.DataCell(ft.Icon(my_icon, my_color, 16)),
+                        ft.DataCell(ft.Icon(my_icon, my_color, 20))
                     ]
                 )
             )
 
         self.cp.table_factures.update()
-
-        self.cp.total_factures.value = f"{total_factures}"
-        self.cp.total_impayes.value = f"{total_impayes}"
-        for widget in (self.cp.total_factures, self.cp.total_impayes):
-            widget.update()
-
         self.cp.factures_window.scale = 1
         self.cp.factures_window.update()
 
@@ -173,7 +149,7 @@ class Clients(ft.Container):
         # Main window ...
         self.search = ft.TextField(**search_field_style, width=300, prefix_icon="search", on_change=self.filter_datas)
         self.results = ft.Text("", size=12, font_family="Poppins Medium")
-        self.table = ft.ListView(expand=True, spacing=10)
+        self.table = ft.ListView(expand=True, spacing=10, divider_thickness=1)
         self.main_window = ft.Container(
             expand=True,
             padding=ft.padding.only(20, 15, 20, 15), border_radius=10, bgcolor="white",
@@ -182,11 +158,11 @@ class Clients(ft.Container):
                 controls=[
                     ft.Column(
                         controls=[
-                            ft.Text("Liste des clients".upper(), size=13, font_family="Poppins Medium"),
+                            ft.Text("Liste des clients".upper(), size=16, font_family="Poppins Bold"),
                             ft.Divider(height=1, thickness=1),
                         ], spacing=0
                     ),
-                    ft.Divider(height=1, color=ft.colors.TRANSPARENT),
+                    ft.Divider(height=2, color=ft.colors.TRANSPARENT),
                     ft.Row(
                         controls=[
                             ft.Row(
@@ -313,9 +289,7 @@ class Clients(ft.Container):
                 ft.DataColumn(ft.Text("Statut".upper())),
             ]
         )
-        self.client = ft.Text("", size=12, font_family="Poppins Medium")
-        self.total_factures = ft.Text("", size=18, font_family="Poppins Medium", color="black45")
-        self.total_impayes = ft.Text("", size=18, font_family="Poppins Medium", color="black45")
+        self.client = ft.Text("", size=12, font_family="Poppins Medium", color="white")
         self.total_percu = ft.Text("", size=18, font_family="Poppins Medium", color="black45")
         self.total_reste = ft.Text("", size=18, font_family="Poppins Medium", color="black45")
         self.factures_window = ft.Card(
@@ -337,8 +311,7 @@ class Clients(ft.Container):
                                             ft.Text("Factures".upper(), size=14, font_family="Poppins Medium")
                                         ]
                                     ),
-                                    ft.IconButton("close", FIRST_COLOR, scale=0.6, bgcolor="white",
-                                                  on_click=self.close_factures_window)
+                                    ft.IconButton("close", FIRST_COLOR, scale=0.6, bgcolor="white", on_click=self.close_factures_window)
                                 ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                             )
                         ),
@@ -346,35 +319,24 @@ class Clients(ft.Container):
                             bgcolor="white", padding=20, border_radius=16, expand=True,
                             content=ft.Column(
                                 controls=[
-                                    ft.Column(
-                                        controls=[
-                                            ft.Row(
-                                                controls=[
-                                                    ft.Text(f"Client: ".upper(), size=12, font_family="Poppins Medium"),
-                                                    self.client,
-                                                ]
-                                            ),
-                                            ft.Divider(height=1, thickness=1),
-                                        ], spacing=0
-                                    ),
                                     ft.Row(
                                         controls=[
-                                            ft.Column(
-                                                controls=[
-                                                    ft.Text("Total factures".upper(), size=12, font_family="Poppins Medium"),
-                                                    self.total_impayes,
-                                                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0
-                                            ),
-                                            ft.Column(
-                                                controls=[
-                                                    ft.Text("Nb non soldées".upper(), size=12, font_family="Poppins Medium"),
-                                                    self.total_factures,
-                                                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=0
-                                            ),
-                                        ], spacing=30
+                                            ft.Text(f"Client: ".upper(), size=12, font_family="Poppins Medium"),
+                                            ft.Container(
+                                                padding=ft.padding.only(10, 3, 10, 3), border_radius=10,
+                                                bgcolor=SECOND_COLOR, content=ft.Row(
+                                                    controls=[self.client],
+                                                    alignment=ft.MainAxisAlignment.CENTER
+                                                )
+                                            )
+                                        ]
                                     ),
                                     ft.Divider(height=1, color=ft.colors.TRANSPARENT),
-                                    ft.ListView(expand=True, controls=[self.table_factures])
+                                    ft.Container(
+                                        padding=ft.padding.only(10, 5, 10, 5),
+                                        border_radius=10, expand=True, border=ft.border.all(1, "grey"),
+                                        content=ft.ListView(expand=True, controls=[self.table_factures])
+                                    )
                                 ]
                             )
                         )
