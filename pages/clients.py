@@ -30,17 +30,11 @@ class FicheClient(ft.Container):
         if self.total_impaye > 0:
             statut = "Pas à jour"
             self.couleur = "red"
-<<<<<<< HEAD
             icone = ft.icons.INDETERMINATE_CHECK_BOX_OUTLINED
         else:
             statut = "à jour"
             self.couleur = "green"
             icone = ft.icons.CHECK_CIRCLE
-=======
-        else:
-            statut = "à jour"
-            self.couleur = "green"
->>>>>>> origin/main
 
         self.statut = statut.upper()
 
@@ -58,7 +52,6 @@ class FicheClient(ft.Container):
 
         self.content = ft.Row(
             controls=[
-<<<<<<< HEAD
                 ft.Row(
                     controls=[
                         ft.TextField(
@@ -75,7 +68,9 @@ class FicheClient(ft.Container):
                         ft.TextField(
                             **readonly_field_style, width=180, prefix_icon=ft.icons.REAL_ESTATE_AGENT_OUTLINED,
                             value=f"{ajout_separateur(self.total_impaye)} XAF"
-=======
+                        )
+                    ]
+                ),
                 ft.Column(
                     controls=[
                         ft.Row(
@@ -139,7 +134,6 @@ class FicheClient(ft.Container):
                                     )
                                 ], alignment=ft.MainAxisAlignment.CENTER
                             )
->>>>>>> origin/main
                         )
                     ]
                 ),

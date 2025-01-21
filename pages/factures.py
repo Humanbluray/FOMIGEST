@@ -463,13 +463,8 @@ class Factures(ft.Container):
                                 controls=[
                                     CtButton(ft.icons.EDIT_OUTLINED, "Voir details", data, self.open_edit_window),
                                     pay_bt,
-<<<<<<< HEAD
                                     CtButton(ft.icons.LIST, "paiements", data, self.voir_paiements)
                                 ], spacing=0, alignment=ft.MainAxisAlignment.END
-=======
-                                    CtButton(ft.icons.LIST_ALT_OUTLINED, "paiements", data, self.voir_paiements)
-                                ]
->>>>>>> origin/main
                             )
                         ),
                     ]
@@ -513,13 +508,8 @@ class Factures(ft.Container):
                                 controls=[
                                     CtButton(ft.icons.EDIT_OUTLINED, "Voir details", data, self.open_edit_window),
                                     pay_bt,
-<<<<<<< HEAD
                                     CtButton(ft.icons.LIST, "paiements", data, self.voir_paiements)
                                 ], spacing=0, alignment=ft.MainAxisAlignment.END
-=======
-                                    CtButton(ft.icons.LIST_ALT_OUTLINED, "paiements", data, self.voir_paiements)
-                                ]
->>>>>>> origin/main
                             )
                         ),
                     ]
