@@ -1,9 +1,5 @@
 import sqlite3 as sql
 import datetime
-
-from flet.core import row
-from pygments.lexers import data
-
 # today = datetime.date.today()
 my_base = "facturier.db"
 INITIALES = "FMD"

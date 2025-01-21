@@ -4,10 +4,7 @@ from pages.clients import Clients
 from pages.devis import Devis
 from pages.stock import Stock
 from pages.factures import Factures
-<<<<<<< HEAD
 from pages.fournisseurs import Fournisseurs
-=======
->>>>>>> origin/main
 
 
 class ItemMenu(ft.Container):
@@ -171,13 +168,10 @@ class Menu(ft.Card):
             self.cp.contenu.content.controls.append(Factures(self.cp))
             self.cp.update()
 
-<<<<<<< HEAD
         if e.control.name.value == "fournisseurs".upper():
             self.cp.contenu.content.controls.append(Fournisseurs(self.cp))
             self.cp.update()
 
-=======
->>>>>>> origin/main
 
 
 
