@@ -71,72 +71,7 @@ class FicheClient(ft.Container):
                         )
                     ]
                 ),
-                ft.Column(
-                    controls=[
-                        ft.Row(
-                            controls=[
-                                ft.Text(f"{infos['nom']}", size=14, font_family="Poppins Medium"),
-                                self.notif
-                            ]
-                        ),
-                        ft.Divider(height=1, thickness=1),
-                    ], spacing=0
-                ),
-                ft.Divider(height=1, color=ft.colors.TRANSPARENT),
-                ft.Row(
-                    controls=[
-                        ft.Row(
-                            controls=[
-                                ft.Column(
-                                    controls=[
-                                        ft.Row(
-                                            controls=[
-                                                ft.Icon(ft.icons.REAL_ESTATE_AGENT, color=SECOND_COLOR, size=15),
-                                                ft.Text(f"Total impayées:".upper(), size=12,
-                                                        font_family="Poppins Medium"),
-                                            ]
-                                        ),
-                                        ft.Text(f"{ajout_separateur(self.total_impaye)} XAF", size=11,
-                                                font_family="Poppins Medium", color="grey", )
-                                    ],spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                                ),
-                                ft.Row(
-                                    controls=[
-                                        ft.Row(
-                                            controls=[
-                                                ft.Icon(ft.icons.SIGNAL_WIFI_STATUSBAR_4_BAR_OUTLINED, color="black",
-                                                        size=15),
-                                                ft.Text(f"Statut:".upper(), size=12,
-                                                        font_family="Poppins Medium"),
-                                            ]
-                                        ),
-                                       ft.Container(
-                                           border_radius=10, padding=ft.padding.only(10, 3, 10, 3), bgcolor=self.couleur,
-                                           content=ft.Row(
-                                               [ft.Text(f"{self.statut}", size=12, font_family="Poppins Medium", color="white")],
-                                               alignment=ft.MainAxisAlignment.CENTER
-                                           )
-                                       )
-                                    ], spacing=10,
-                                ),
-                            ], spacing=100
-                        ),
-                        ft.Container(
-                            padding=ft.padding.only(10, 3,10 ,3), border_radius=16, border=ft.border.all(1, "grey"),
-                            content=ft.Row(
-                                controls=[
-                                    ft.Text("Actions", size=12, font_family="Poppins Italic"),
-                                    ft.Row(
-                                        controls=[
-                                            CtButton("edit_outlined", "Modifier", infos, self.open_edit_window),
-                                            CtButton(ft.icons.CREDIT_CARD_OUTLINED, "Factures", infos, self.voir_factures)
-                                        ], spacing=2
-                                    )
-                                ], alignment=ft.MainAxisAlignment.CENTER
-                            )
-                        )
-                    ]
-                ),
+
                 ft.Row(
                     controls=[
                         CtButton("edit_outlined", "Modifier", infos, self.open_edit_window),
