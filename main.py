@@ -1,12 +1,14 @@
 import flet as ft
-from pages.landing import Landing
-from pages.welcome import Welcome
+from pages.landing.landing import Landing
+from pages.welcome.welcome import Welcome
+from pages.first_connexion.first_connexion import FirstLogin
 import os
 
 
 # Définir des constantes pour les routes
 WELCOME_ROUTE = "/welcome"
 LANDING_ROUTE = "/"
+FIRST_CONNEXION = "/first_connexion"
 
 
 def main(page: ft.Page):
@@ -27,6 +29,7 @@ def main(page: ft.Page):
     route_views = {
         LANDING_ROUTE: Landing,
         WELCOME_ROUTE: Welcome,
+        FIRST_CONNEXION: FirstLogin
     }
 
     # Gérer les changements de route

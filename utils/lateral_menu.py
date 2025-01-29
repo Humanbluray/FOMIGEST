@@ -1,10 +1,11 @@
 import flet as ft
-from utils.constantes import FIRST_COLOR, SECOND_COLOR
-from pages.clients import Clients
-from pages.devis import Devis
-from pages.stock import Stock
-from pages.factures import Factures
-from pages.fournisseurs import Fournisseurs
+from utils.constantes import FIRST_COLOR
+from pages.welcome.onglets.clients import Clients
+from pages.welcome.onglets.devis import Devis
+from pages.welcome.onglets.stock import Stock
+from pages.welcome.onglets.factures import Factures
+from pages.welcome.onglets.fournisseurs import Fournisseurs
+from pages.landing.landing import user_infos
 
 
 class ItemMenu(ft.Container):
@@ -92,14 +93,15 @@ class Menu(ft.Card):
         self.color_text = ft.colors.BLACK87
 
         self.clients = ItemMenu("clients".upper(), ft.icons.GROUP_WORK_OUTLINED, self.color_icon, self.color_text)
-        self.fournisseurs = ItemMenu("Fournisseurs".upper(), ft.icons.GROUPS_2_OUTLINED, self.color_icon, self.color_text)
+        self.fournisseurs = ItemMenu("Prestataires".upper(), ft.icons.GROUPS_2_OUTLINED, self.color_icon, self.color_text)
         self.stock = ItemMenu("stock".upper(), ft.icons.HOME_OUTLINED, self.color_icon, self.color_text)
         self.commandes = ItemMenu("commandes".upper(), ft.icons.BOOKMARK_BORDER_OUTLINED, self.color_icon, self.color_text)
         self.devis = ItemMenu("devis".upper(), ft.icons.MONETIZATION_ON_OUTLINED, self.color_icon, self.color_text)
         self.factures = ItemMenu("factures".upper(), ft.icons.PAYMENTS_OUTLINED, self.color_icon, self.color_text)
+        self.users = ItemMenu("utilisateurs".upper(), ft.icons.PERSON_OUTLINE_OUTLINED, self.color_icon, self.color_text)
 
         self.children = [
-            self.clients, self.fournisseurs, self.stock, self.commandes, self.devis, self.factures,
+            self.clients, self.fournisseurs, self.stock, self.commandes, self.devis, self.factures, self.users
         ]
 
         for item in self.children:
@@ -107,30 +109,51 @@ class Menu(ft.Card):
 
         self.content = ft.Container(
             padding=ft.padding.only(20, 15, 20, 15),
-            border_radius=8, bgcolor="white",
+            border_radius=12, bgcolor="white",
             content=ft.Column(
                 controls=[
                     ft.Column(
                         controls=[
                             ft.Container(
-                                content=ft.Text("FOMIDERC", font_family="Poppins Bold", size=16),
+                                padding=ft.padding.only(10, 5, 10, 5),
+                                border_radius=10, bgcolor="#f2f2f2",
+                                content=ft.Row(
+                                    controls=[
+                                        ft.Icon(ft.icons.ACCOUNT_CIRCLE, size=18, color="black87",
+                                                tooltip=f"{user_infos['username']}".upper()),
+                                        ft.Text(f"{user_infos['userlogin']}".upper(), size=12, font_family="Poppins Medium"),
+
+                                    ], alignment=ft.MainAxisAlignment.START
+                                )
                             ),
+                            ft.Divider(height=2, color="transparent"),
                             ft.Divider(height=1, thickness=1),
                             ft.Divider(height=2, color="transparent"),
                             ft.Column(
                                 controls=[
-                                    self.clients, self.fournisseurs, self.stock, self.commandes, self.devis, self.factures,
+                                    self.clients, self.fournisseurs, self.stock, self.commandes,
+                                    self.devis, self.factures, self.users
                                 ], spacing=10, horizontal_alignment=ft.CrossAxisAlignment.CENTER
                             ),
                         ]
                     ),
                     ft.Column(
                         controls=[
+                            # ft.Container(
+                            #     padding=ft.padding.only(10, 3, 10, 3), bgcolor="#f2f2f2",
+                            #     border=ft.border.all(1, "grey"), border_radius=10,
+                            #     content=ft.Row(
+                            #         controls=[
+                            #             ft.Icon(ft.icons.VERIFIED_USER_OUTLINED, size=16, color="black87"),
+                            #             ft.Text(f"{user_infos['userlogin']}", size=12, font_family="Poppins Medium")
+                            #         ], alignment=ft.MainAxisAlignment.CENTER, spacing=0
+                            #     ),
+                            # ),
                             ft.Divider(height=1, thickness=1),
                             ft.Column(
                                 controls=[
                                     ft.Text("FOMIGEST V2.0", size=11, font_family="Poppins Medium"),
-                                    ft.Text("BY VAN TECH V2.0", size=11, font_family="Poppins Medium"),
+                                    ft.Text("BY VAN TECH", size=11, font_family="Poppins Medium"),
                                 ], spacing=0,
                                 horizontal_alignment=ft.CrossAxisAlignment.CENTER
                             )
@@ -168,7 +191,7 @@ class Menu(ft.Card):
             self.cp.contenu.content.controls.append(Factures(self.cp))
             self.cp.update()
 
-        if e.control.name.value == "fournisseurs".upper():
+        if e.control.name.value == "prestataires".upper():
             self.cp.contenu.content.controls.append(Fournisseurs(self.cp))
             self.cp.update()
 

@@ -25,7 +25,8 @@ def connexion_base():
                     delai           TEXT,
                     point_liv       TEXT,
                     validite        INTEGER,
-                    paiement        INTEGER)""")
+                    paiement        INTEGER,
+                    cree_par        TEXT)""")
 
     # Details devis
     cur.execute("""CREATE TABLE IF NOT EXISTS devis_details (
@@ -168,13 +169,13 @@ def connexion_base():
 
 
 # fonctions de la table devis et devis_details ___________________________________________________________
-def add_devis(numero, date, client, montant, objet, remise, montant_lettres, notabene, delai, point_liv, validite, paiement):
+def add_devis(numero, date, client, montant, objet, remise, montant_lettres, notabene, delai, point_liv, validite, paiement, username):
     statut = "Non facturé"
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute("""INSERT INTO devis values 
-                    (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (cur.lastrowid, numero, date, client, montant, objet, remise, montant_lettres, statut, notabene, delai, point_liv, validite, paiement))
+                    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (cur.lastrowid, numero, date, client, montant, objet, remise, montant_lettres, statut, notabene, delai, point_liv, validite, paiement, username))
     conn.commit()
     conn.close()
 
@@ -244,32 +245,6 @@ def delete_devis(numero):
     cur.execute("""DELETE FROM devis WHERE numero = ?""", (numero, ))
     con.commit()
     con.close()
-
-
-def find_devis_num(id_client):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT count(id) FROM devis""")
-    resultat = cur.fetchone()
-    r_final = ""
-
-    ini_cli = search_initiales(id_client)
-
-    if resultat[0] is None or resultat[0] == 0:
-        r_final = ini_cli + "001/" + INITIALES + "/DV"
-    else:
-        if int(resultat[0]) < 10:
-            r_final = ini_cli + "00" + str(resultat[0] + 1) + "/" + INITIALES + "/DV"
-
-        elif 10 < int(resultat[0]) < 100:
-            r_final = ini_cli + "0" + str(resultat[0] + 1) + "/" + INITIALES + "/DV"
-
-        else:
-            r_final = ini_cli + str(resultat[0] + 1) + "/" + INITIALES + "/DV"
-
-    conn.commit()
-    conn.close()
-    return r_final
 
 
 def search_devis_details(numero):
@@ -349,14 +324,14 @@ def all_devis():
     cur = conn.cursor()
     cur.execute(
         """SELECT id, numero, date, client, montant, objet, remise, statut, note_bene, delai, point_liv, validite, paiement,
-        (SELECT nom FROM clients WHERE clients.id = devis.client) as client_name
+        (SELECT nom FROM clients WHERE clients.id = devis.client) as client_name, cree_par
         FROM devis ORDER BY id DESC
         """)
     resultat = cur.fetchall()
     final = [
         {"id": data[0], "numero": data[1], "date": data[2], "client": data[13], "montant": data[4],
          "objet": data[5], "remise": data[6], "statut": data[7], "note_bene": data[8], "delai": data[9],
-         "point_liv": data[10], 'validité': data[11], "paiement": data[12]} for data in resultat
+         "point_liv": data[10], 'validité': data[11], "paiement": data[12], "username": data[14]} for data in resultat
     ]
     conn.commit()
     conn.close()
@@ -368,13 +343,12 @@ def select_one_devis(numero):
     cur = conn.cursor()
     cur.execute(
         """SELECT id, numero, date, client, montant, objet, remise, statut, note_bene, delai, point_liv, validite, paiement,
-        (SELECT nom FROM clients WHERE clients.id = devis.client) as client_name
-        FROM devis WHERE numero = ? ORDER BY id DESC
-        """, (numero,))
+        (SELECT nom FROM clients WHERE clients.id = devis.client) as client_name, cree_par
+        FROM devis WHERE numero = ? ORDER BY id DESC""", (numero,))
     resultat = cur.fetchone()
     final = {"id": resultat[0], "numero": resultat[1], "date": resultat[2], "client": resultat[13], "montant": resultat[4],
          "objet": resultat[5], "remise": resultat[6], "statut": resultat[7], "note_bene": resultat[8], "delai": resultat[9],
-         "point_liv": resultat[10], 'validite': resultat[11], "paiement": resultat[12]}
+         "point_liv": resultat[10], 'validite': resultat[11], "paiement": resultat[12], "cree_par": resultat[14]}
     conn.commit()
     conn.close()
     return final
@@ -446,6 +420,33 @@ def all_initiales():
     conn.commit()
     conn.close()
     return final
+
+
+def find_devis_num(id_client):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute("""SELECT * FROM devis""")
+    resultat = cur.fetchall()
+    this_year = f"{datetime.date.today().year}"
+    final = [row for row in resultat if str(row[2])[0:4] == this_year]
+    dev_num = len(final)
+    ini_cli = search_initiales(id_client)
+
+    if dev_num is None or dev_num == 0:
+        r_final = ini_cli + "001/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
+    else:
+        if int(dev_num) < 10:
+            r_final = ini_cli + "00" + str(dev_num + 1) + "/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
+
+        elif 10 < int(dev_num) < 100:
+            r_final = ini_cli + "0" + str(dev_num + 1) + "/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
+
+        else:
+            r_final = ini_cli + str(dev_num + 1) + "/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
+
+    conn.commit()
+    conn.close()
+    return r_final
 
 
 def id_client_by_name(nom):
@@ -591,21 +592,24 @@ def nb_factures():
 def find_facture_num(id_client):
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""SELECT count(id) FROM factures""")
-    resultat = cur.fetchone()
+    cur.execute("""SELECT * FROM factures""")
+    resultat = cur.fetchall()
+    this_year = f"{datetime.date.today().year}"
+    final = [row for row in resultat if str(row[2])[0:4] == this_year]
+    fact_num = len(final)
     ini_cli = search_initiales(id_client)
 
-    if resultat[0] == 0:
-        r_final = ini_cli + "001" + "/" + INITIALES + "/FA"
+    if fact_num == 0:
+        r_final = ini_cli + "001" + "/" + INITIALES + "/FA/" + f"{datetime.date.today().year}"
     else:
-        if resultat[0] < 10:
-            r_final = ini_cli + "00" + str(resultat[0] + 1) + "/" + INITIALES + "/FA"
+        if fact_num < 10:
+            r_final = ini_cli + "00" + str(fact_num + 1) + "/" + INITIALES + "/FA/" + f"{datetime.date.today().year}"
 
-        elif 10 < resultat[0] < 100:
-            r_final = ini_cli + "0" + str(resultat[0] + 1) + "/" + INITIALES + "/FA"
+        elif 10 < fact_num < 100:
+            r_final = ini_cli + "0" + str(fact_num + 1) + "/" + INITIALES + "/FA/" + f"{datetime.date.today().year}"
 
         else:
-            r_final = ini_cli + str(resultat[0] + 1) + "/" + INITIALES + "/FA"
+            r_final = ini_cli + str(fact_num + 1) + "/" + INITIALES + "/FA/" + f"{datetime.date.today().year}"
     conn.commit()
     conn.close()
     return r_final
@@ -667,27 +671,6 @@ def all_factures_by_client_id(client_id):
     conn.commit()
     conn.close()
     return final
-
-# print(len(all_factures_by_client_id(29)))
-# for row in all_factures_by_client_id(29):
-#     print(row)
-#     total = row['total'] - row['total']*row['remise']/100
-#     reste = total - row['regle']
-#     print(total)
-#     print(reste)
-
-
-# def all_factures_by_client_id(client_id):
-#     conn = sql.connect(my_base)
-#     cur = conn.cursor()
-#     cur.execute("""SELECT numero FROM factures WHERE client = ?""", (client_id,))
-#     final = []
-#     res = cur.fetchall()
-#     for dev in res:
-#         final.append(dev[0])
-#     conn.commit()
-#     conn.close()
-#     return final
 
 
 def search_factures_details(numero):
@@ -1028,33 +1011,62 @@ def update_ref_by_name(designation, ref_id):
 
 
 # tables utilisateurs
+def check_login(login, passw):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute("""SELECT login, pass from utilisateurs""")
+    resultat = cur.fetchall()
+    final = [{"login": data[0], "pass": data[1]} for data in resultat]
+    user = {"login": login, "pass": passw}
+    conn.commit()
+    conn.close()
+    return True if user in final else False
+
+
 def all_users():
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute("""SELECT login, pass from utilisateurs""")
     resultat = cur.fetchall()
+    final = [
+        {
+            "login": data[0], "pass": data[1], "nom": data[2], "fonction": data[3], "groupe": data[4]
+        }
+        for data in resultat
+    ]
     conn.commit()
     conn.close()
-    return resultat
+    return final
 
 
-def check_user(login: str):
+def search_user_infos(login):
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""SELECT login FROM utilisateurs""")
-    resultat = cur.fetchall()
+    cur.execute("""SELECT * FROM utilisateurs WHERE login = ?""", (login,))
+    resultat = cur.fetchone()
+    final = {"login": resultat[0], "pass": resultat[1], "nom": resultat[2], "fonction": resultat[3], "groupe": resultat[4]}
     conn.commit()
     conn.close()
-    counter = 0
+    return final
 
-    for item in resultat:
-        if item[0] == login:
-            counter += 1
 
-    if counter > 0:
-        return True
-    else:
-        return False
+# def check_user(login: str):
+#     conn = sql.connect(my_base)
+#     cur = conn.cursor()
+#     cur.execute("""SELECT login FROM utilisateurs""")
+#     resultat = cur.fetchall()
+#     conn.commit()
+#     conn.close()
+#     counter = 0
+#
+#     for item in resultat:
+#         if item[0] == login:
+#             counter += 1
+#
+#     if counter > 0:
+#         return True
+#     else:
+#         return False
 
 
 def find_user_password(login):
