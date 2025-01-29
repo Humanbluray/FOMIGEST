@@ -8,6 +8,14 @@ from docx.shared import Pt, Cm, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+from supabase import create_client
+
+load_dotenv()
+url = os.environ.get("SUPABASE_URL")
+key = os.environ.get("SUPABASE_KEY")
+supabase = create_client(url, key)
 
 
 class OneArticle(ft.Container):
@@ -815,7 +823,7 @@ class Devis(ft.Container):
                             ft.Divider(height=1, color=ft.colors.TRANSPARENT),
                             AnyButton(
                                 FIRST_COLOR, ft.icons.LOCAL_PRINTSHOP_OUTLINED, "Imprimer", "white", 280,
-                                lambda e: self.cp.fp_print_devis.save_file()
+                                self.imprimer_devis
                             )
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER
                     )
@@ -1358,8 +1366,7 @@ class Devis(ft.Container):
                 if ir is True:
                     # Créer un nouveau document Word
                     doc = Document()
-                    save_location = e.path
-                    fichier = f"{os.path.abspath(save_location)}.docx"
+
 
                     # Ajouter une image dans l'en-tête
                     section = doc.sections[0]
@@ -1377,13 +1384,16 @@ class Devis(ft.Container):
 
 
                     # Sauvegarder le fichier
-                    doc.save(fichier)
+                    desktop_path = Path.home() / "Desktop"
+                    file_path = f"{desktop_path}/file.docx"
+
+                    # Sauvegarder le fichier
+                    doc.save(file_path)
 
                 # Si l'IR n'est pos active
                 else:
                     doc = Document()
-                    save_location = e.path
-                    fichier = f"{os.path.abspath(save_location)}.docx"
+
 
                     # Ajouter une image dans l'en-tête
                     section = doc.sections[0]
@@ -1400,7 +1410,11 @@ class Devis(ft.Container):
                     # Ajouter du contenu au corps du document
 
                     # Sauvegarder le fichier
-                    doc.save(fichier)
+                    desktop_path = Path.home() / "Desktop"
+                    file_path = f"{desktop_path}/file.docx"
+
+                    # Sauvegarder le fichier
+                    doc.save(file_path)
 
         # Cas du régime réel
         else:
@@ -1408,8 +1422,7 @@ class Devis(ft.Container):
             if tva is True:
                 if ir is True:
                     doc = Document()
-                    save_location = e.path
-                    fichier = f"{os.path.abspath(save_location)}.docx"
+
 
                     # Ajouter une image dans l'en-tête
                     section = doc.sections[0]
@@ -1426,13 +1439,16 @@ class Devis(ft.Container):
                     # Ajouter du contenu au corps du document
 
                     # Sauvegarder le fichier
-                    doc.save(fichier)
+                    desktop_path = Path.home() / "Desktop"
+                    file_path = f"{desktop_path}/file.docx"
+
+                    # Sauvegarder le fichier
+                    doc.save(file_path)
 
                 # Si l'IR n'est pos active
                 else:
                     doc = Document()
-                    save_location = e.path
-                    fichier = f"{os.path.abspath(save_location)}.docx"
+
 
                     # Ajouter une image dans l'en-tête
                     section = doc.sections[0]
@@ -1450,15 +1466,18 @@ class Devis(ft.Container):
 
 
                     # Sauvegarder le fichier
-                    doc.save(fichier)
+                    desktop_path = Path.home() / "Desktop"
+                    file_path = f"{desktop_path}/file.docx"
+
+                    # Sauvegarder le fichier
+                    doc.save(file_path)
 
             # Si la TVA n'est pas active
             else:
                 # Si l'IR est active
                 if ir is True:
                     doc = Document()
-                    save_location = e.path
-                    fichier = f"{os.path.abspath(save_location)}.docx"
+
 
                     # Ajouter une image dans l'en-tête
                     section = doc.sections[0]
@@ -1476,13 +1495,16 @@ class Devis(ft.Container):
 
 
                     # Sauvegarder le fichier
-                    doc.save(fichier)
+                    desktop_path = Path.home() / "Desktop"
+                    file_path = f"{desktop_path}/file.docx"
+
+                    # Sauvegarder le fichier
+                    doc.save(file_path)
 
                 # Si l'IR n'est pos active
                 else:
                     doc = Document()
-                    save_location = e.path
-                    fichier = f"{os.path.abspath(save_location)}.docx"
+
 
                     # Ajouter une image dans l'en-tête
                     section = doc.sections[0]
@@ -1497,7 +1519,11 @@ class Devis(ft.Container):
                     footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
                     # Ajouter du contenu au corps du document
-
+                    desktop_path = Path.home() / "Desktop"
+                    file_path = f"{desktop_path}/file.docx"
 
                     # Sauvegarder le fichier
-                    doc.save(fichier)
+                    doc.save(file_path)
+
+    # def savemy_file(self, e):
+    #     self.cp.fp_print_devis.save_file(file_name="devis.docx")
