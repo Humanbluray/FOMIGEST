@@ -4,9 +4,10 @@ import backend as be
 from utils.useful_functions import ajout_separateur, ecrire_en_lettres
 import datetime
 from docx import Document
-from docx.shared import Pt, Cm
+from docx.shared import Pt, Cm, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
+import os
 
 
 class OneArticle(ft.Container):
@@ -764,6 +765,7 @@ class Devis(ft.Container):
             label_style=ft.TextStyle(size=12, font_family="Poppins Medium"), active_color="white", check_color=FIRST_COLOR,
             label="IR", label_position=ft.LabelPosition.RIGHT
         )
+        self.cp.fp_print_devis.on_result = self.imprimer_devis
         self.impression_window = ft.Card(
             elevation=20, surface_tint_color="#f0f0f6", width=350, height=400,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
@@ -811,7 +813,10 @@ class Devis(ft.Container):
                             ),
                             self.banque,
                             ft.Divider(height=1, color=ft.colors.TRANSPARENT),
-                            AnyButton(FIRST_COLOR, ft.icons.LOCAL_PRINTSHOP_OUTLINED, "Imprimer", "white", 280, None)
+                            AnyButton(
+                                FIRST_COLOR, ft.icons.LOCAL_PRINTSHOP_OUTLINED, "Imprimer", "white", 280,
+                                lambda e: self.cp.fp_print_devis.save_file()
+                            )
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER
                     )
                 )
@@ -1353,6 +1358,8 @@ class Devis(ft.Container):
                 if ir is True:
                     # Créer un nouveau document Word
                     doc = Document()
+                    save_location = e.path
+                    fichier = f"{os.path.abspath(save_location)}.docx"
 
                     # Ajouter une image dans l'en-tête
                     section = doc.sections[0]
@@ -1362,38 +1369,135 @@ class Devis(ft.Container):
                     footer_paragraph = footer.paragraphs[0]
 
                     # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Cm(5))
+                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
                     # Ajouter l'image dans le pied de page
-                    footer_paragraph.add_run().add_picture("assets/images/footer.jpg", width=Cm(5))
+                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
                     # Ajouter du contenu au corps du document
 
 
                     # Sauvegarder le fichier
-                    doc.save("document_avec_image_entete.docx")
+                    doc.save(fichier)
 
                 # Si l'IR n'est pos active
                 else:
-                    pass
+                    doc = Document()
+                    save_location = e.path
+                    fichier = f"{os.path.abspath(save_location)}.docx"
+
+                    # Ajouter une image dans l'en-tête
+                    section = doc.sections[0]
+                    header = section.header
+                    header_paragraph = header.paragraphs[0]
+                    footer = section.footer
+                    footer_paragraph = footer.paragraphs[0]
+
+                    # Ajouter l'image dans l'en-tête
+                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                    # Ajouter l'image dans le pied de page
+                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+
+                    # Ajouter du contenu au corps du document
+
+                    # Sauvegarder le fichier
+                    doc.save(fichier)
 
         # Cas du régime réel
         else:
             # Si la TVA est Active
             if tva is True:
                 if ir is True:
-                    pass
+                    doc = Document()
+                    save_location = e.path
+                    fichier = f"{os.path.abspath(save_location)}.docx"
+
+                    # Ajouter une image dans l'en-tête
+                    section = doc.sections[0]
+                    header = section.header
+                    header_paragraph = header.paragraphs[0]
+                    footer = section.footer
+                    footer_paragraph = footer.paragraphs[0]
+
+                    # Ajouter l'image dans l'en-tête
+                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                    # Ajouter l'image dans le pied de page
+                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+
+                    # Ajouter du contenu au corps du document
+
+                    # Sauvegarder le fichier
+                    doc.save(fichier)
 
                 # Si l'IR n'est pos active
                 else:
-                    pass
+                    doc = Document()
+                    save_location = e.path
+                    fichier = f"{os.path.abspath(save_location)}.docx"
+
+                    # Ajouter une image dans l'en-tête
+                    section = doc.sections[0]
+                    header = section.header
+                    header_paragraph = header.paragraphs[0]
+                    footer = section.footer
+                    footer_paragraph = footer.paragraphs[0]
+
+                    # Ajouter l'image dans l'en-tête
+                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                    # Ajouter l'image dans le pied de page
+                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+
+                    # Ajouter du contenu au corps du document
+
+
+                    # Sauvegarder le fichier
+                    doc.save(fichier)
 
             # Si la TVA n'est pas active
             else:
                 # Si l'IR est active
                 if ir is True:
-                    pass
+                    doc = Document()
+                    save_location = e.path
+                    fichier = f"{os.path.abspath(save_location)}.docx"
+
+                    # Ajouter une image dans l'en-tête
+                    section = doc.sections[0]
+                    header = section.header
+                    header_paragraph = header.paragraphs[0]
+                    footer = section.footer
+                    footer_paragraph = footer.paragraphs[0]
+
+                    # Ajouter l'image dans l'en-tête
+                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                    # Ajouter l'image dans le pied de page
+                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+
+                    # Ajouter du contenu au corps du document
+
+
+                    # Sauvegarder le fichier
+                    doc.save(fichier)
 
                 # Si l'IR n'est pos active
                 else:
-                    pass
+                    doc = Document()
+                    save_location = e.path
+                    fichier = f"{os.path.abspath(save_location)}.docx"
 
+                    # Ajouter une image dans l'en-tête
+                    section = doc.sections[0]
+                    header = section.header
+                    header_paragraph = header.paragraphs[0]
+                    footer = section.footer
+                    footer_paragraph = footer.paragraphs[0]
+
+                    # Ajouter l'image dans l'en-tête
+                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                    # Ajouter l'image dans le pied de page
+                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+
+                    # Ajouter du contenu au corps du document
+
+
+                    # Sauvegarder le fichier
+                    doc.save(fichier)
