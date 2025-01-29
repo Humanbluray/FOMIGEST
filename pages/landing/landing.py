@@ -1,3 +1,5 @@
+import time
+
 import flet as ft
 from utils import login_style, AnyButton
 from utils.constantes import FIRST_COLOR
@@ -82,7 +84,8 @@ class Landing(ft.View):
             user_infos["userlogin"] = details["login"]
             user_infos["status"] = True
             self.page.go(f"/welcome/{user_infos['username']}")
-            user_infos["status"] = True
+            time.sleep(10)
+            user_infos["status"] = False
         else:
             user_infos["status"] = False
             self.box.title.value = "Erreur"
