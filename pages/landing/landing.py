@@ -82,6 +82,7 @@ class Landing(ft.View):
             user_infos["userlogin"] = details["login"]
             user_infos["status"] = True
             self.page.go(f"/welcome/{user_infos['username']}")
+            user_infos["status"] = True
         else:
             user_infos["status"] = False
             self.box.title.value = "Erreur"
