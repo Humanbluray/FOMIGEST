@@ -3,7 +3,7 @@ from utils import login_style, AnyButton
 from utils.constantes import FIRST_COLOR
 import backend as be
 
-user_infos = {"username": "", "usergroup": "", "userlogin": ""}
+user_infos = {"username": "", "usergroup": "", "userlogin": "", "status": False}
 
 
 class Landing(ft.View):
@@ -80,8 +80,10 @@ class Landing(ft.View):
             user_infos["username"] = details["nom"]
             user_infos["usergroup"] = details["groupe"]
             user_infos["userlogin"] = details["login"]
-            self.page.go("/welcome")
+            user_infos["status"] = True
+            self.page.go(f"/welcome/{user_infos['username']}")
         else:
+            user_infos["status"] = False
             self.box.title.value = "Erreur"
             self.box.content.value = "Login ou mot de passe incorrect(s)"
             self.box.open = True

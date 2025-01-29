@@ -2,12 +2,15 @@ import flet as ft
 import datetime
 from utils.lateral_menu import Menu
 from utils.constantes import FIRST_COLOR, SECOND_COLOR, THIRD_COLOR
+from pages.landing.landing import user_infos
 
 
 class Welcome(ft.View):
     def __init__(self, page):
         super().__init__(
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER, route="/", bgcolor="#f2f2f2"
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            route=f"/welcome/{user_infos['username']}",
+            bgcolor="#f2f2f2"
         )
         self.page = page
         self.menu = Menu(self, page)

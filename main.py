@@ -1,12 +1,12 @@
 import flet as ft
-from pages.landing.landing import Landing
+from pages.landing.landing import Landing, user_infos
 from pages.welcome.welcome import Welcome
 from pages.first_connexion.first_connexion import FirstLogin
 import os
 
 
 # Définir des constantes pour les routes
-WELCOME_ROUTE = "/welcome"
+WELCOME_ROUTE = f"/welcome/{user_infos['username']}"
 LANDING_ROUTE = "/"
 FIRST_CONNEXION = "/first_connexion"
 
@@ -34,14 +34,23 @@ def main(page: ft.Page):
 
     # Gérer les changements de route
     def route_change(event: ft.RouteChangeEvent):
-        page.views.clear()  # Réinitialiser les vues
-        current_route = event.route  # Récupérer la route depuis l'événement
-        if current_route in route_views:
-            page.views.append(route_views[current_route](page))
-        else:
-            # Rediriger vers une route par défaut si la route est inconnue
-            page.views.append(Landing(page))
+        # initial route ...
+        page.views.clear()
+        page.views.append(Landing(page))
         page.update()
+
+        if page.route == "/":
+            page.views.append(Landing(page))
+            page.update()
+
+        if page.route == f"/welcome/{user_infos['username']}":
+            if user_infos["status"]:
+                page.views.append(Welcome(page))
+            else:
+                page.views.append(Landing(page))
+            page.update()
+
+    page.update()
 
     # Gérer la navigation "retour"
     def view_pop(view):
@@ -60,5 +69,5 @@ def main(page: ft.Page):
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", 8080))
-    ft.app(target=main, port=port,)  # , view=ft.AppView.WEB_BROWSER)
+    ft.app(target=main, port=port, assets_dir="assets")  # , view=ft.AppView.WEB_BROWSER)
 
