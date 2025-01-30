@@ -6,8 +6,8 @@ def ecrire_date(date: str):
 
     def find_mois(my_month):
         year_months = [
-            'janv', "Fev", "Mar", "Avr", "Mai", "Jun",
-            "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"
+            'Janvier', "Février", "Mars", "Avril", "Mai", "Juin",
+            "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Decembre"
         ]
         return year_months[my_month - 1]
 

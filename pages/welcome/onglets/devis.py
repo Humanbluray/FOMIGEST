@@ -1,11 +1,13 @@
 from utils import *
 import flet as ft
 import backend as be
-from utils.useful_functions import ajout_separateur, ecrire_en_lettres
+from utils.useful_functions import ajout_separateur, ecrire_en_lettres, ecrire_date
 import datetime
 from docx import Document
-from docx.shared import Pt, Cm, Inches
+from docx.shared import Pt, Cm, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
+from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import os
 import io
@@ -1371,18 +1373,209 @@ class Devis(ft.Container):
                     # generer le document word
                     def generate_word_doc():
                         doc = Document()
+
                         # Ajouter une image dans l'en-tête
-                        section = doc.sections[0]
-                        header = section.header
-                        header_paragraph = header.paragraphs[0]
-                        footer = section.footer
-                        footer_paragraph = footer.paragraphs[0]
+                        def header_and_footer():
+                            section = doc.sections[0]
+                            header = section.header
+                            header_paragraph = header.paragraphs[0]
+                            footer = section.footer
+                            footer_paragraph = footer.paragraphs[0]
+                            # Ajouter l'image dans l'en-tête
+                            header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                            # Ajouter l'image dans le pied de page
+                            footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
-                        # Ajouter l'image dans l'en-tête
-                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                        # Ajouter l'image dans le pied de page
-                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                        header_and_footer()
 
+                        # Créer un tableau principal avec une seule ligne et deux colonnes pour entete client
+                        main_table = doc.add_table(rows=1, cols=2)
+
+                        # Entête infos facture
+                        def entete_facture():
+                            # Ajouter un tableau dans la première cellule
+                            cell1 = main_table.cell(0, 0)
+                            num_proforma = self.edit_num.value
+                            suivant = "Suivant proforma N°"
+                            date = be.show_info_devis(num_proforma)["date"]
+
+                            table1 = cell1.add_table(rows=4, cols=1)  # Tableau avec 4 lignes et 1 colonne
+                            cell1_1 = table1.cell(0, 0)
+                            paragraph1 = cell1_1.paragraphs[0]
+                            run1 = paragraph1.add_run("PROFORMA")
+                            paragraph1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                            run1.font.name = "Arial Black"
+                            run1.font.size = Pt(16)
+                            cell1_1.paragraphs[0].paragraph_format.space_before = 0  # Pas d'espace avant le paragraphe
+                            cell1_1.paragraphs[0].paragraph_format.space_after = 0  # Pas d'espace après le paragraphe
+                            cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(25)  # Espacement entre les lignes réduit
+
+                            cell1_2 = table1.cell(1, 0)
+                            paragraph2 = cell1_2.paragraphs[0]
+                            run2 = paragraph2.add_run(f"{num_proforma}")
+                            paragraph2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                            run2.font.name = "calibri"
+                            run2.font.size = Pt(12)
+                            cell1_2.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                            cell1_2.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                            cell1_2.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
+
+                            cell1_3 = table1.cell(2, 0)
+                            paragraph3 = cell1_3.paragraphs[0]
+                            run3 = paragraph3.add_run(f"Suivant demande du {ecrire_date(date)}")
+                            paragraph3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                            run2.font.name = "calibri"
+                            run2.font.size = Pt(12)
+                            cell1_3.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                            cell1_3.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                            cell1_3.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
+
+                        entete_facture()
+
+                        # Entete infos client
+                        def entete_infos_client():
+                            # Ajouter un tableau dans la première cellule
+                            cell1 = main_table.cell(0, 1)
+                            client_id = be.show_info_devis(self.edit_num.value)["client"]
+                            client = be.infos_clients(client_id)["nom"]
+                            contact = be.infos_clients(client_id)["contact"]
+                            nui = be.infos_clients(client_id)["NUI"]
+                            rc = be.infos_clients(client_id)["RC"]
+
+                            table1 = cell1.add_table(rows=4, cols=1)  # Tableau avec 4 lignes et 1 colonne
+                            cell1_1 = table1.cell(0, 0)
+                            paragraph1 = cell1_1.paragraphs[0]
+                            run1 = paragraph1.add_run(f"Client: {client}")
+                            paragraph1.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                            run1.font.name = "calibri"
+                            run1.font.size = Pt(12)
+                            cell1_1.paragraphs[0].paragraph_format.space_before = 0  # Pas d'espace avant le paragraphe
+                            cell1_1.paragraphs[0].paragraph_format.space_after = 0  # Pas d'espace après le paragraphe
+                            cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(
+                                20)  # Espacement entre les lignes réduit
+
+                            cell1_2 = table1.cell(1, 0)
+                            paragraph2 = cell1_2.paragraphs[0]
+                            run2 = paragraph2.add_run(f"Contact: {contact}")
+                            paragraph2.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                            run2.font.name = "calibri"
+                            run2.font.size = Pt(12)
+                            cell1_2.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                            cell1_2.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                            cell1_2.paragraphs[0].paragraph_format.line_spacing = Pt(15)
+
+                            cell1_3 = table1.cell(2, 0)
+                            paragraph3 = cell1_3.paragraphs[0]
+                            run3 = paragraph3.add_run(f"NUI: {nui}")
+                            paragraph3.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                            run3.font.name = "calibri"
+                            run3.font.size = Pt(12)
+                            cell1_3.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                            cell1_3.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                            cell1_3.paragraphs[0].paragraph_format.line_spacing = Pt(15)
+
+                            cell1_4 = table1.cell(3, 0)
+                            paragraph4 = cell1_4.paragraphs[0]
+                            run4 = paragraph4.add_run(f"RC: {rc}")
+                            paragraph4.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                            run4.font.name = "calibri"
+                            run4.font.size = Pt(12)
+                            cell1_4.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                            cell1_4.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                            cell1_4.paragraphs[0].paragraph_format.line_spacing = Pt(15)
+
+                        entete_infos_client()
+
+                        # Objet
+                        def draw_simple_paragraph(text: str, before: int, after: int, font_size: int,
+                                                          is_italic: bool, is_bold: bool):
+                            details_pg = doc.add_paragraph()
+                            details_pg.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                            details_pg_format = details_pg.paragraph_format
+                            details_pg_format.space_before = Pt(before)  # Espace avant le paragraphe
+                            details_pg_format.space_after = Pt(after)
+                            details_pg_format.line_spacing = 1
+                            run_details_header = details_pg.add_run(text)  # Run 1 Separation
+                            run_details_header.font.name = "calibri"
+                            run_details_header.font.size = Pt(font_size)
+                            run_details_header.italic = is_italic
+                            run_details_header.bold = is_bold
+
+                        # Objet
+                        objet = be.show_info_devis(self.edit_num.value)['objet']
+                        if objet == "" or objet is None:
+                            pass
+                        else:
+                            draw_simple_paragraph(
+                                f"Objet: {objet}",
+                                10, 10, 12, False, False
+                            )
+
+                        # References
+                        def draw_details_devis():
+                            details = be.find_devis_details(self.edit_num.value)
+                            longueur = len(details) + 1
+
+                            # Créer un tableau avec 3 lignes et 6 colonnes
+                            table = doc.add_table(rows=longueur, cols=6)
+
+                            # Ajouter les entêtes (ligne 0)
+                            hdr_cells = table.rows[0].cells
+                            headers = ["Item", "Désignation", "Qté", "U", "P.U.", "Total (CFA)"]
+
+                            column_widths = [1, 10, 1.5, 2, 2, 2]  # Largeurs des colonnes en cm
+
+                            # # Appliquer les largeurs des colonnes
+                            # tbl = table._element  # Récupérer l'élément XML du tableau
+                            # tbl_grid = tbl.tblGrid  # Accéder à la grille du tableau
+                            #
+                            # # Ajouter des colonnes à la grille du tableau et définir les largeurs
+                            # for i, width in enumerate(column_widths):
+                            #     # Convertir la largeur en unités EMU (1 cm = 360000 EMU)
+                            #     width_emu = int(width * 360000)
+
+                            # Pour les lignes d'entête
+                            for i, hdr in enumerate(headers):
+                                hdr_cells[i].text = hdr
+                                # Appliquer du gras aux entêtes
+                                for paragraph in hdr_cells[i].paragraphs:
+                                    for run in paragraph.runs:
+                                        run.bold = True
+                                # Centrer le texte des entêtes
+                                hdr_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+                            # Ajouter des données dans les 2 autres lignes (lignes 1 et 2)
+                            for i, row in enumerate(table.rows[1:]):  # i commence à 0 pour la première ligne de données
+
+                                row.cells[0].text = f"{i}"  # Item
+                                row.cells[1].text = details[i]["designation"]  # désignation
+                                row.cells[2].text = str(details[i]["qte"])
+                                row.cells[3].text = str(details[i]["unite"])
+                                row.cells[4].text = f"{ajout_separateur(details[i]['prix'] * details[i]['qte'])}"
+                                row.cells[5].text = f"{ajout_separateur(details[i]['prix'] * details[i]['qte'])}"
+
+                                # Aligner le texte au centre pour toutes les cellules de cette ligne
+                                for cell in row.cells:
+                                    cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+                            # Appliquer des bordures noires à chaque cellule
+                            for row in table.rows:
+                                for cell in row.cells:
+                                    cell._element.get_or_add_tcPr().append(OxmlElement('w:tcBorders'))
+                                    borders = cell._element.xpath('.//w:tcBorders')[0]
+                                    for border in borders:
+                                        border.set(qn('w:top'), 'single')
+                                        border.set(qn('w:left'), 'single')
+                                        border.set(qn('w:bottom'), 'single')
+                                        border.set(qn('w:right'), 'single')
+
+                        draw_details_devis()
+
+
+
+
+
+                        # Enregistrement du fichier
                         buffer = io.BytesIO()
                         doc.save(buffer)
                         buffer.seek(0)

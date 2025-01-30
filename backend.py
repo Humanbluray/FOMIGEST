@@ -308,10 +308,17 @@ def show_info_devis(numero):
 def find_devis_details(numero):
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""SELECT * FROM devis_details WHERE numero=?""", (numero,))
+    cur.execute(
+        """SELECT id, numero, reference, qte, prix,
+        (SELECT designation FROM articles WHERE articles.reference = devis_details.reference) as designation,
+        (SELECT unite FROM articles WHERE articles.reference = devis_details.reference) as unite
+        FROM devis_details WHERE numero=?
+        """,
+        (numero,)
+    )
     resultat = cur.fetchall()
     final = [
-        {"id": data[0], "numero": data[1], "reference": data[2], "qte": data[3], "prix": data[4],}
+        {"id": data[0], "numero": data[1], "reference": data[2], "qte": data[3], "prix": data[4], "designation": data[5], "unite": data[6]}
         for data in resultat
     ]
     conn.commit()
@@ -516,9 +523,14 @@ def infos_clients(id_client):
     cur = conn.cursor()
     cur.execute("""SELECT * FROM clients WHERE id = ?""", (id_client,))
     resultat = cur.fetchone()
+    final = {"id": resultat[0], "nom": resultat[1], "initiales": resultat[2], "contact": resultat[3], "NUI": resultat[4], "RC": resultat[5],
+         "courriel": resultat[6], "commercial": resultat[7]}
     conn.commit()
     conn.close()
-    return resultat
+    return final
+
+
+print(infos_clients(29))
 
 
 def update_client(nom, ini, cont, nui, rc, mail, comm, id_client):
