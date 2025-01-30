@@ -6,7 +6,7 @@ import datetime
 from docx import Document
 from docx.shared import Pt, Cm, Inches, RGBColor
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
+from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import os
@@ -1371,6 +1371,7 @@ class Devis(ft.Container):
                 # Si l'IR est active
                 if ir is True:
                     # generer le document word
+                    total_prix = 0
                     def generate_word_doc():
                         doc = Document()
 
@@ -1487,10 +1488,11 @@ class Devis(ft.Container):
                         entete_infos_client()
 
                         # Objet
-                        def draw_simple_paragraph(text: str, before: int, after: int, font_size: int,
-                                                          is_italic: bool, is_bold: bool):
+                        def draw_simple_paragraph(
+                                text: str, alignment, before: int, after: int, font_size: int,
+                                is_italic: bool, is_bold: bool):
                             details_pg = doc.add_paragraph()
-                            details_pg.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
+                            details_pg.alignment = alignment
                             details_pg_format = details_pg.paragraph_format
                             details_pg_format.space_before = Pt(before)  # Espace avant le paragraphe
                             details_pg_format.space_after = Pt(after)
@@ -1507,7 +1509,7 @@ class Devis(ft.Container):
                             pass
                         else:
                             draw_simple_paragraph(
-                                f"Objet: {objet}",
+                                f"Objet: {objet}", WD_PARAGRAPH_ALIGNMENT.LEFT,
                                 10, 10, 12, False, False
                             )
 
@@ -1519,57 +1521,159 @@ class Devis(ft.Container):
                             # Créer un tableau avec 3 lignes et 6 colonnes
                             table = doc.add_table(rows=longueur, cols=6)
 
-                            # Ajouter les entêtes (ligne 0)
-                            hdr_cells = table.rows[0].cells
-                            headers = ["Item", "Désignation", "Qté", "U", "P.U.", "Total (CFA)"]
+                            # Appliquer des bordures au tableau entier
+                            # Ajouter des bordures noires à chaque cellule
+                            def set_cell_border(cell):
+                                """ Ajoute une bordure noire autour d'une cellule """
+                                tc_pr = cell._element.get_or_add_tcPr()
+                                borders = OxmlElement('w:tcBorders')
 
-                            column_widths = [1, 10, 1.5, 2, 2, 2]  # Largeurs des colonnes en cm
+                                for border_name in ['top', 'left', 'bottom', 'right']:
+                                    border = OxmlElement(f'w:{border_name}')
+                                    border.set(qn('w:val'), 'single')  # Bordure simple
+                                    border.set(qn('w:sz'),
+                                               '8')  # Taille de la bordure (plus épais pour meilleure visibilité)
+                                    border.set(qn('w:space'), '0')
+                                    border.set(qn('w:color'), '000000')  # Noir
+                                    borders.append(border)
 
-                            # # Appliquer les largeurs des colonnes
-                            # tbl = table._element  # Récupérer l'élément XML du tableau
-                            # tbl_grid = tbl.tblGrid  # Accéder à la grille du tableau
-                            #
-                            # # Ajouter des colonnes à la grille du tableau et définir les largeurs
-                            # for i, width in enumerate(column_widths):
-                            #     # Convertir la largeur en unités EMU (1 cm = 360000 EMU)
-                            #     width_emu = int(width * 360000)
+                                tc_pr.append(borders)
 
-                            # Pour les lignes d'entête
-                            for i, hdr in enumerate(headers):
-                                hdr_cells[i].text = hdr
-                                # Appliquer du gras aux entêtes
-                                for paragraph in hdr_cells[i].paragraphs:
-                                    for run in paragraph.runs:
-                                        run.bold = True
-                                # Centrer le texte des entêtes
-                                hdr_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-                            # Ajouter des données dans les 2 autres lignes (lignes 1 et 2)
-                            for i, row in enumerate(table.rows[1:]):  # i commence à 0 pour la première ligne de données
-
-                                row.cells[0].text = f"{i}"  # Item
-                                row.cells[1].text = details[i]["designation"]  # désignation
-                                row.cells[2].text = str(details[i]["qte"])
-                                row.cells[3].text = str(details[i]["unite"])
-                                row.cells[4].text = f"{ajout_separateur(details[i]['prix'] * details[i]['qte'])}"
-                                row.cells[5].text = f"{ajout_separateur(details[i]['prix'] * details[i]['qte'])}"
-
-                                # Aligner le texte au centre pour toutes les cellules de cette ligne
-                                for cell in row.cells:
-                                    cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
-
-                            # Appliquer des bordures noires à chaque cellule
+                            # Appliquer les bordures à toutes les cellules
                             for row in table.rows:
                                 for cell in row.cells:
-                                    cell._element.get_or_add_tcPr().append(OxmlElement('w:tcBorders'))
-                                    borders = cell._element.xpath('.//w:tcBorders')[0]
-                                    for border in borders:
-                                        border.set(qn('w:top'), 'single')
-                                        border.set(qn('w:left'), 'single')
-                                        border.set(qn('w:bottom'), 'single')
-                                        border.set(qn('w:right'), 'single')
+                                    set_cell_border(cell)
+
+
+                            # Définir la largeur spécifique des colonnes (en centimètres)
+                            column_widths = [Cm(1), Cm(12), Cm(1.5), Cm(1), Cm(2), Cm(2.5)]  # Largeurs des colonnes
+
+                            # Appliquer les largeurs de colonnes
+                            for col_idx, width in enumerate(column_widths):
+                                for row in table.rows:
+                                    row.cells[col_idx].width = width  # Définir la largeur de la cellule
+
+                            # Ajouter les en-têtes (ligne 0)
+                            hdr_cells = table.rows[0].cells
+                            headers = ["item", "Désignation", "Qté", "U", "Prix", "total (CFA)"]
+                            for i, hdr in enumerate(headers):
+                                paragraph = hdr_cells[i].paragraphs[0]
+                                run = paragraph.add_run(hdr)
+                                run.bold = True
+                                run.font.name = "Calibri"
+                                run.font.size = Pt(10)
+
+                                # Centrer horizontalement
+                                paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                                # Centrer verticalement
+
+
+                            # Ajouter des données dans les 2 autres lignes (lignes 1 et 2) avec des nombres aléatoires
+                            for i, row in enumerate(table.rows[1:]):  # i commence à 0 pour la première ligne de données
+                                # Indice de la ligne (Ligne 1, Ligne 2, etc.)
+                                details = be.find_devis_details(self.edit_num.value)
+                                values = [f"{i }", str(details[i]["designation"]), str(details[i]["qte"]),
+                                          str(details[i]["unite"]), str(ajout_separateur(details[i]["prix"])),
+                                          str(ajout_separateur(details[i]["prix"]*details[i]["qte"]))
+                                ]
+
+                                for j, cell in enumerate(row.cells):
+                                    paragraph = cell.paragraphs[0]
+                                    run = paragraph.add_run(values[j])
+                                    run.font.name = "Calibri"
+                                    run.font.size = Pt(10)
+                                    paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER  # Centrer le texte
+                                    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+
+
+
+                            # Appliquer des bordures noires à chaque cellule
+                            # for row in table.rows:
+                            #     for cell in row.cells:
+                            #         cell._element.get_or_add_tcPr().append(OxmlElement('w:tcBorders'))
+                            #         borders = cell._element.xpath('.//w:tcBorders')[0]
+                            #         for border in borders:
+                            #             border.set(qn('w:top'), 'single')
+                            #             border.set(qn('w:left'), 'single')
+                            #             border.set(qn('w:bottom'), 'single')
+                            #             border.set(qn('w:right'), 'single')
 
                         draw_details_devis()
+
+                        # Montant total
+                        mt_total = 0
+                        details = be.find_devis_details(self.edit_num.value)
+                        for row in details:
+                            mt_total += row["qte"]*row["prix"]
+
+                        def draw_montants():
+                            draw_simple_paragraph(
+                                f"Total: {ajout_separateur(mt_total)}", WD_PARAGRAPH_ALIGNMENT.RIGHT, 10, 1,
+                                11, False, False
+                            )
+                            if int(self.edit_remise.value) == 0:
+                                mt_ir = int(mt_total*2.2/100)
+                                draw_simple_paragraph(
+                                    f"IR: {ajout_separateur(mt_ir)} %",
+                                    WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                    11, False, False
+                                )
+                                mt_nap = int(mt_total - mt_ir)
+                                draw_simple_paragraph(
+                                    f"NAP: {ajout_separateur(mt_nap)} %",
+                                    WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                    11, False, False
+                                )
+                            else:
+                                draw_simple_paragraph(
+                                    f"Remise: {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                    11, False, False
+                                )
+                                mt_remise = be.show_info_devis(self.edit_num.value)['montant']
+                                draw_simple_paragraph(
+                                    f"Montant Remisé: {ajout_separateur(mt_remise)} %",
+                                    WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                    11, False, False
+                                )
+                                mt_ir = int(mt_remise*2.2/100)
+                                draw_simple_paragraph(
+                                    f"IR: {ajout_separateur(mt_ir)} %",
+                                    WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                    11, False, False
+                                )
+                                mt_nap = mt_remise - mt_ir
+                                draw_simple_paragraph(
+                                    f"NAP: {ajout_separateur(mt_nap)} %",
+                                    WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                    11, False, False
+                                )
+
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 10,
+                                11, False, True
+                            )
+
+                            if be.show_info_devis(self.edit_num.value)["note_bene"] == "" or \
+                                    be.show_info_devis(self.edit_num.value)["note_bene"] is None:
+                                pass
+                            else:
+                                draw_simple_paragraph(
+                                    f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 10,
+                                    11, False, True
+                                )
+                                observations = be.show_info_devis(self.edit_num.value)["note_bene"].split(";")
+                                for observ in observations:
+                                    draw_simple_paragraph(
+                                        f"{observ}", WD_PARAGRAPH_ALIGNMENT.LEFT, 20, 10,
+                                        11, False, False
+                                    )
+
+                        draw_montants()
+
 
 
 
