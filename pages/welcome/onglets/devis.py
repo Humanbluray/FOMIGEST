@@ -773,10 +773,12 @@ class Devis(ft.Container):
             label_style=ft.TextStyle(size=12, font_family="Poppins Medium"), active_color="white", check_color=FIRST_COLOR,
             label="IR", label_position=ft.LabelPosition.RIGHT
         )
-
-        self.cp.fp_print_devis.on_result = self.imprimer_devis
+        self.download_button = AnyButton(
+            FIRST_COLOR, "edit", "Télécharger fichier", "white", 200, None
+        )
+        self.download_button.visible = False
         self.impression_window = ft.Card(
-            elevation=20, surface_tint_color="#f0f0f6", width=350, height=400,
+            elevation=20, surface_tint_color="#f0f0f6", width=350, height=500,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0), expand=True,
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
@@ -825,7 +827,8 @@ class Devis(ft.Container):
                             AnyButton(
                                 FIRST_COLOR, ft.icons.LOCAL_PRINTSHOP_OUTLINED, "Imprimer", "white", 280,
                                 self.imprimer_devis
-                            )
+                            ),
+                            self.download_button
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER
                     )
                 )
@@ -1393,9 +1396,9 @@ class Devis(ft.Container):
                     # Upload vers Supabase Storage
                     response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
-                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+
                     file_url = supabase.storage.from_("devis").get_public_url(path)
-                    print(file_url)
+
 
                 # Si l'IR n'est pos active
                 else:
@@ -1425,9 +1428,10 @@ class Devis(ft.Container):
                     # Upload vers Supabase Storage
                     response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
-                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+
                     file_url = supabase.storage.from_("devis").get_public_url(path)
-                    print(file_url)
+                    self.download_button.url = file_url
+                    self.download_button.visible = True
 
         # Cas du régime réel
         else:
@@ -1460,9 +1464,10 @@ class Devis(ft.Container):
                     # Upload vers Supabase Storage
                     response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
-                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+
                     file_url = supabase.storage.from_("devis").get_public_url(path)
-                    print(file_url)
+                    self.download_button.url = file_url
+                    self.download_button.visible = True
 
                 # Si l'IR n'est pos active
                 else:
@@ -1493,9 +1498,10 @@ class Devis(ft.Container):
                     # Upload vers Supabase Storage
                     response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
-                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+
                     file_url = supabase.storage.from_("devis").get_public_url(path)
-                    print(file_url)
+                    self.download_button.url = file_url
+                    self.download_button.visible = True
 
             # Si la TVA n'est pas active
             else:
@@ -1528,9 +1534,10 @@ class Devis(ft.Container):
                     # Upload vers Supabase Storage
                     response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
-                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+
                     file_url = supabase.storage.from_("devis").get_public_url(path)
-                    print(file_url)
+                    self.download_button.url = file_url
+                    self.download_button.visible = True
 
                 # Si l'IR n'est pos active
                 else:
@@ -1555,12 +1562,14 @@ class Devis(ft.Container):
                     file_bytes = buffer.getvalue()
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                     path = f"{timestamp}_{"mon_devis.docx"}"
+                    file_obj = io.BytesIO(file_bytes)
 
                     # Upload vers Supabase Storage
-                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
+                    response = supabase.storage.from_("devis").upload(path, file_obj, {
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
-                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+
                     file_url = supabase.storage.from_("devis").get_public_url(path)
-                    print(file_url)
+                    self.download_button.url = file_url
+                    self.download_button.visible = True
 
 
