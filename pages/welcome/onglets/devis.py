@@ -8,7 +8,7 @@ from docx.shared import Pt, Cm, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 import os
-from pathlib import Path
+import io
 from dotenv import load_dotenv
 from supabase import create_client
 
@@ -773,6 +773,7 @@ class Devis(ft.Container):
             label_style=ft.TextStyle(size=12, font_family="Poppins Medium"), active_color="white", check_color=FIRST_COLOR,
             label="IR", label_position=ft.LabelPosition.RIGHT
         )
+
         self.cp.fp_print_devis.on_result = self.imprimer_devis
         self.impression_window = ft.Card(
             elevation=20, surface_tint_color="#f0f0f6", width=350, height=400,
@@ -1382,13 +1383,18 @@ class Devis(ft.Container):
 
                     # Ajouter du contenu au corps du document
 
+                    buffer = io.BytesIO()
+                    doc.save(buffer)
+                    buffer.seek(0)
+                    file_bytes = buffer.getvalue()
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    path = f"{timestamp}_{"mon_devis.docx"}"
 
-                    # Sauvegarder le fichier
-                    desktop_path = Path.home() / "Desktop"
-                    file_path = f"{desktop_path}/file.docx"
-
-                    # Sauvegarder le fichier
-                    doc.save(file_path)
+                    # Upload vers Supabase Storage
+                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
+                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+                    file_url = supabase.storage.from_("devis").get_public_url(path)
 
                 # Si l'IR n'est pos active
                 else:
@@ -1408,13 +1414,18 @@ class Devis(ft.Container):
                     footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
                     # Ajouter du contenu au corps du document
+                    buffer = io.BytesIO()
+                    doc.save(buffer)
+                    buffer.seek(0)
+                    file_bytes = buffer.getvalue()
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    path = f"{timestamp}_{"mon_devis.docx"}"
 
-                    # Sauvegarder le fichier
-                    desktop_path = Path.home() / "Desktop"
-                    file_path = f"{desktop_path}/file.docx"
-
-                    # Sauvegarder le fichier
-                    doc.save(file_path)
+                    # Upload vers Supabase Storage
+                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
+                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+                    file_url = supabase.storage.from_("devis").get_public_url(path)
 
         # Cas du régime réel
         else:
@@ -1437,13 +1448,18 @@ class Devis(ft.Container):
                     footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
                     # Ajouter du contenu au corps du document
+                    buffer = io.BytesIO()
+                    doc.save(buffer)
+                    buffer.seek(0)
+                    file_bytes = buffer.getvalue()
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    path = f"{timestamp}_{"mon_devis.docx"}"
 
-                    # Sauvegarder le fichier
-                    desktop_path = Path.home() / "Desktop"
-                    file_path = f"{desktop_path}/file.docx"
-
-                    # Sauvegarder le fichier
-                    doc.save(file_path)
+                    # Upload vers Supabase Storage
+                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
+                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+                    file_url = supabase.storage.from_("devis").get_public_url(path)
 
                 # Si l'IR n'est pos active
                 else:
@@ -1464,13 +1480,18 @@ class Devis(ft.Container):
 
                     # Ajouter du contenu au corps du document
 
+                    buffer = io.BytesIO()
+                    doc.save(buffer)
+                    buffer.seek(0)
+                    file_bytes = buffer.getvalue()
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    path = f"{timestamp}_{"mon_devis.docx"}"
 
-                    # Sauvegarder le fichier
-                    desktop_path = Path.home() / "Desktop"
-                    file_path = f"{desktop_path}/file.docx"
-
-                    # Sauvegarder le fichier
-                    doc.save(file_path)
+                    # Upload vers Supabase Storage
+                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
+                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+                    file_url = supabase.storage.from_("devis").get_public_url(path)
 
             # Si la TVA n'est pas active
             else:
@@ -1493,13 +1514,18 @@ class Devis(ft.Container):
 
                     # Ajouter du contenu au corps du document
 
+                    buffer = io.BytesIO()
+                    doc.save(buffer)
+                    buffer.seek(0)
+                    file_bytes = buffer.getvalue()
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    path = f"{timestamp}_{"mon_devis.docx"}"
 
-                    # Sauvegarder le fichier
-                    desktop_path = Path.home() / "Desktop"
-                    file_path = f"{desktop_path}/file.docx"
-
-                    # Sauvegarder le fichier
-                    doc.save(file_path)
+                    # Upload vers Supabase Storage
+                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
+                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+                    file_url = supabase.storage.from_("devis").get_public_url(path)
 
                 # Si l'IR n'est pos active
                 else:
@@ -1518,12 +1544,17 @@ class Devis(ft.Container):
                     # Ajouter l'image dans le pied de page
                     footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
-                    # Ajouter du contenu au corps du document
-                    desktop_path = Path.home() / "Desktop"
-                    file_path = f"{desktop_path}/file.docx"
+                    buffer = io.BytesIO()
+                    doc.save(buffer)
+                    buffer.seek(0)
+                    file_bytes = buffer.getvalue()
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    path = f"{timestamp}_{"mon_devis.docx"}"
 
-                    # Sauvegarder le fichier
-                    doc.save(file_path)
+                    # Upload vers Supabase Storage
+                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
+                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                    resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
+                    file_url = supabase.storage.from_("devis").get_public_url(path)
 
-    # def savemy_file(self, e):
-    #     self.cp.fp_print_devis.save_file(file_name="devis.docx")
+
