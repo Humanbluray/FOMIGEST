@@ -1395,6 +1395,7 @@ class Devis(ft.Container):
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
                     resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
                     file_url = supabase.storage.from_("devis").get_public_url(path)
+                    print(file_url)
 
                 # Si l'IR n'est pos active
                 else:
@@ -1426,6 +1427,7 @@ class Devis(ft.Container):
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
                     resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
                     file_url = supabase.storage.from_("devis").get_public_url(path)
+                    print(file_url)
 
         # Cas du régime réel
         else:
@@ -1460,6 +1462,7 @@ class Devis(ft.Container):
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
                     resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
                     file_url = supabase.storage.from_("devis").get_public_url(path)
+                    print(file_url)
 
                 # Si l'IR n'est pos active
                 else:
@@ -1492,6 +1495,7 @@ class Devis(ft.Container):
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
                     resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
                     file_url = supabase.storage.from_("devis").get_public_url(path)
+                    print(file_url)
 
             # Si la TVA n'est pas active
             else:
@@ -1526,6 +1530,7 @@ class Devis(ft.Container):
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
                     resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
                     file_url = supabase.storage.from_("devis").get_public_url(path)
+                    print(file_url)
 
                 # Si l'IR n'est pos active
                 else:
@@ -1556,5 +1561,6 @@ class Devis(ft.Container):
                         "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
                     resp = supabase.storage.from_("devis").upload(doc, {"content-type"})
                     file_url = supabase.storage.from_("devis").get_public_url(path)
+                    print(file_url)
 
 
