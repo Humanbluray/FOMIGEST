@@ -1368,208 +1368,326 @@ class Devis(ft.Container):
             else:
                 # Si l'IR est active
                 if ir is True:
-                    # Créer un nouveau document Word
-                    doc = Document()
+                    # generer le document word
+                    def generate_word_doc():
+                        doc = Document()
+                        # Ajouter une image dans l'en-tête
+                        section = doc.sections[0]
+                        header = section.header
+                        header_paragraph = header.paragraphs[0]
+                        footer = section.footer
+                        footer_paragraph = footer.paragraphs[0]
 
+                        # Ajouter l'image dans l'en-tête
+                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                        # Ajouter l'image dans le pied de page
+                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
-                    # Ajouter une image dans l'en-tête
-                    section = doc.sections[0]
-                    header = section.header
-                    header_paragraph = header.paragraphs[0]
-                    footer = section.footer
-                    footer_paragraph = footer.paragraphs[0]
+                        buffer = io.BytesIO()
+                        doc.save(buffer)
+                        buffer.seek(0)
+                        return buffer.getvalue()
 
-                    # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                    # Ajouter l'image dans le pied de page
-                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                    def upload_to_supabase(file, filename):
+                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
+                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                        file_path = f"{time_stamp}_{filename}"
 
-                    # Ajouter du contenu au corps du document
+                        # 🔹 Upload vers Supabase Storage
+                        resp = supabase.storage.from_("devis").upload(
+                            file_path,
+                            file,  # Fichier en bytes
+                            file_options={
+                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+                            # Ajout du MIME type ici
+                        )
+                        # 🔹 Vérification des erreurs
+                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
+                            return None, resp["error"]
 
-                    buffer = io.BytesIO()
-                    doc.save(buffer)
-                    buffer.seek(0)
-                    file_bytes = buffer.getvalue()
-                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    path = f"{timestamp}_{"mon_devis.docx"}"
+                        # 🔹 Générer l'URL publique
+                        url = supabase.storage.from_("devis").get_public_url(file_path)
+                        return url, None
 
-                    # Upload vers Supabase Storage
-                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
-                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                    file_bytes = generate_word_doc()
+                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
 
-                    file_url = supabase.storage.from_("devis").get_public_url(path)
+                    if error:
+                        self.download_button.disabled = True
+                    else:
+                        self.download_button.url = file_url
+                        self.download_button.visible = True
+                        self.download_button.update()
 
 
                 # Si l'IR n'est pos active
                 else:
-                    doc = Document()
+                    # generer le document word
+                    def generate_word_doc():
+                        doc = Document()
+                        # Ajouter une image dans l'en-tête
+                        section = doc.sections[0]
+                        header = section.header
+                        header_paragraph = header.paragraphs[0]
+                        footer = section.footer
+                        footer_paragraph = footer.paragraphs[0]
 
+                        # Ajouter l'image dans l'en-tête
+                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                        # Ajouter l'image dans le pied de page
+                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
-                    # Ajouter une image dans l'en-tête
-                    section = doc.sections[0]
-                    header = section.header
-                    header_paragraph = header.paragraphs[0]
-                    footer = section.footer
-                    footer_paragraph = footer.paragraphs[0]
+                        buffer = io.BytesIO()
+                        doc.save(buffer)
+                        buffer.seek(0)
+                        return buffer.getvalue()
 
-                    # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                    # Ajouter l'image dans le pied de page
-                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                    def upload_to_supabase(file, filename):
+                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
+                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                        file_path = f"{time_stamp}_{filename}"
 
-                    # Ajouter du contenu au corps du document
-                    buffer = io.BytesIO()
-                    doc.save(buffer)
-                    buffer.seek(0)
-                    file_bytes = buffer.getvalue()
-                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    path = f"{timestamp}_{"mon_devis.docx"}"
+                        # 🔹 Upload vers Supabase Storage
+                        resp = supabase.storage.from_("devis").upload(
+                            file_path,
+                            file,  # Fichier en bytes
+                            file_options={
+                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+                            # Ajout du MIME type ici
+                        )
+                        # 🔹 Vérification des erreurs
+                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
+                            return None, resp["error"]
 
-                    # Upload vers Supabase Storage
-                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
-                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                        # 🔹 Générer l'URL publique
+                        url = supabase.storage.from_("devis").get_public_url(file_path)
+                        return url, None
 
-                    file_url = supabase.storage.from_("devis").get_public_url(path)
-                    self.download_button.url = file_url
-                    self.download_button.visible = True
+                    file_bytes = generate_word_doc()
+                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
+
+                    if error:
+                        self.download_button.disabled = True
+                    else:
+                        self.download_button.url = file_url
+                        self.download_button.visible = True
+                        self.download_button.update()
 
         # Cas du régime réel
         else:
             # Si la TVA est Active
             if tva is True:
                 if ir is True:
-                    doc = Document()
+                    # generer le document word
+                    def generate_word_doc():
+                        doc = Document()
+                        # Ajouter une image dans l'en-tête
+                        section = doc.sections[0]
+                        header = section.header
+                        header_paragraph = header.paragraphs[0]
+                        footer = section.footer
+                        footer_paragraph = footer.paragraphs[0]
 
+                        # Ajouter l'image dans l'en-tête
+                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                        # Ajouter l'image dans le pied de page
+                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
-                    # Ajouter une image dans l'en-tête
-                    section = doc.sections[0]
-                    header = section.header
-                    header_paragraph = header.paragraphs[0]
-                    footer = section.footer
-                    footer_paragraph = footer.paragraphs[0]
+                        buffer = io.BytesIO()
+                        doc.save(buffer)
+                        buffer.seek(0)
+                        return buffer.getvalue()
 
-                    # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                    # Ajouter l'image dans le pied de page
-                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                    def upload_to_supabase(file, filename):
+                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
+                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                        file_path = f"{time_stamp}_{filename}"
 
-                    # Ajouter du contenu au corps du document
-                    buffer = io.BytesIO()
-                    doc.save(buffer)
-                    buffer.seek(0)
-                    file_bytes = buffer.getvalue()
-                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    path = f"{timestamp}_{"mon_devis.docx"}"
+                        # 🔹 Upload vers Supabase Storage
+                        resp = supabase.storage.from_("devis").upload(
+                            file_path,
+                            file,  # Fichier en bytes
+                            file_options={
+                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+                            # Ajout du MIME type ici
+                        )
+                        # 🔹 Vérification des erreurs
+                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
+                            return None, resp["error"]
 
-                    # Upload vers Supabase Storage
-                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
-                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                        # 🔹 Générer l'URL publique
+                        url = supabase.storage.from_("devis").get_public_url(file_path)
+                        return url, None
 
-                    file_url = supabase.storage.from_("devis").get_public_url(path)
-                    self.download_button.url = file_url
-                    self.download_button.visible = True
+                    file_bytes = generate_word_doc()
+                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
+
+                    if error:
+                        self.download_button.disabled = True
+                    else:
+                        self.download_button.url = file_url
+                        self.download_button.visible = True
+                        self.download_button.update()
 
                 # Si l'IR n'est pos active
                 else:
-                    doc = Document()
+                    # generer le document word
+                    def generate_word_doc():
+                        doc = Document()
+                        # Ajouter une image dans l'en-tête
+                        section = doc.sections[0]
+                        header = section.header
+                        header_paragraph = header.paragraphs[0]
+                        footer = section.footer
+                        footer_paragraph = footer.paragraphs[0]
 
+                        # Ajouter l'image dans l'en-tête
+                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                        # Ajouter l'image dans le pied de page
+                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
-                    # Ajouter une image dans l'en-tête
-                    section = doc.sections[0]
-                    header = section.header
-                    header_paragraph = header.paragraphs[0]
-                    footer = section.footer
-                    footer_paragraph = footer.paragraphs[0]
+                        buffer = io.BytesIO()
+                        doc.save(buffer)
+                        buffer.seek(0)
+                        return buffer.getvalue()
 
-                    # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                    # Ajouter l'image dans le pied de page
-                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                    def upload_to_supabase(file, filename):
+                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
+                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                        file_path = f"{time_stamp}_{filename}"
 
-                    # Ajouter du contenu au corps du document
+                        # 🔹 Upload vers Supabase Storage
+                        resp = supabase.storage.from_("devis").upload(
+                            file_path,
+                            file,  # Fichier en bytes
+                            file_options={
+                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+                            # Ajout du MIME type ici
+                        )
+                        # 🔹 Vérification des erreurs
+                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
+                            return None, resp["error"]
 
-                    buffer = io.BytesIO()
-                    doc.save(buffer)
-                    buffer.seek(0)
-                    file_bytes = buffer.getvalue()
-                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    path = f"{timestamp}_{"mon_devis.docx"}"
+                        # 🔹 Générer l'URL publique
+                        url = supabase.storage.from_("devis").get_public_url(file_path)
+                        return url, None
 
-                    # Upload vers Supabase Storage
-                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
-                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                    file_bytes = generate_word_doc()
+                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
 
-                    file_url = supabase.storage.from_("devis").get_public_url(path)
-                    self.download_button.url = file_url
-                    self.download_button.visible = True
+                    if error:
+                        self.download_button.disabled = True
+                    else:
+                        self.download_button.url = file_url
+                        self.download_button.visible = True
+                        self.download_button.update()
 
             # Si la TVA n'est pas active
             else:
                 # Si l'IR est active
                 if ir is True:
-                    doc = Document()
+                    # generer le document word
+                    def generate_word_doc():
+                        doc = Document()
+                        # Ajouter une image dans l'en-tête
+                        section = doc.sections[0]
+                        header = section.header
+                        header_paragraph = header.paragraphs[0]
+                        footer = section.footer
+                        footer_paragraph = footer.paragraphs[0]
 
+                        # Ajouter l'image dans l'en-tête
+                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                        # Ajouter l'image dans le pied de page
+                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
-                    # Ajouter une image dans l'en-tête
-                    section = doc.sections[0]
-                    header = section.header
-                    header_paragraph = header.paragraphs[0]
-                    footer = section.footer
-                    footer_paragraph = footer.paragraphs[0]
+                        buffer = io.BytesIO()
+                        doc.save(buffer)
+                        buffer.seek(0)
+                        return buffer.getvalue()
 
-                    # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                    # Ajouter l'image dans le pied de page
-                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                    def upload_to_supabase(file, filename):
+                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
+                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                        file_path = f"{time_stamp}_{filename}"
 
-                    # Ajouter du contenu au corps du document
+                        # 🔹 Upload vers Supabase Storage
+                        resp = supabase.storage.from_("devis").upload(
+                            file_path,
+                            file,  # Fichier en bytes
+                            file_options={
+                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+                            # Ajout du MIME type ici
+                        )
+                        # 🔹 Vérification des erreurs
+                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
+                            return None, resp["error"]
 
-                    buffer = io.BytesIO()
-                    doc.save(buffer)
-                    buffer.seek(0)
-                    file_bytes = buffer.getvalue()
-                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    path = f"{timestamp}_{"mon_devis.docx"}"
+                        # 🔹 Générer l'URL publique
+                        url = supabase.storage.from_("devis").get_public_url(file_path)
+                        return url, None
 
-                    # Upload vers Supabase Storage
-                    response = supabase.storage.from_("devis").upload(path, io.BytesIO(file_bytes), {
-                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                    file_bytes = generate_word_doc()
+                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
 
-                    file_url = supabase.storage.from_("devis").get_public_url(path)
-                    self.download_button.url = file_url
-                    self.download_button.visible = True
+                    if error:
+                        self.download_button.disabled = True
+                    else:
+                        self.download_button.url = file_url
+                        self.download_button.visible = True
+                        self.download_button.update()
 
                 # Si l'IR n'est pos active
                 else:
-                    doc = Document()
+                    # generer le document word
+                    def generate_word_doc():
+                        doc = Document()
+                        # Ajouter une image dans l'en-tête
+                        section = doc.sections[0]
+                        header = section.header
+                        header_paragraph = header.paragraphs[0]
+                        footer = section.footer
+                        footer_paragraph = footer.paragraphs[0]
 
+                        # Ajouter l'image dans l'en-tête
+                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                        # Ajouter l'image dans le pied de page
+                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
-                    # Ajouter une image dans l'en-tête
-                    section = doc.sections[0]
-                    header = section.header
-                    header_paragraph = header.paragraphs[0]
-                    footer = section.footer
-                    footer_paragraph = footer.paragraphs[0]
+                        buffer = io.BytesIO()
+                        doc.save(buffer)
+                        buffer.seek(0)
+                        return buffer.getvalue()
 
-                    # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                    # Ajouter l'image dans le pied de page
-                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                    def upload_to_supabase(file, filename):
+                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
+                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                        file_path = f"{time_stamp}_{filename}"
 
-                    buffer = io.BytesIO()
-                    doc.save(buffer)
-                    buffer.seek(0)
-                    file_bytes = buffer.getvalue()
-                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    path = f"{timestamp}_{"mon_devis.docx"}"
-                    file_obj = io.BytesIO(file_bytes)
+                        # 🔹 Upload vers Supabase Storage
+                        resp = supabase.storage.from_("devis").upload(
+                            file_path,
+                            file,  # Fichier en bytes
+                            file_options={
+                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+                            # Ajout du MIME type ici
+                        )
+                        # 🔹 Vérification des erreurs
+                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
+                            return None, resp["error"]
 
-                    # Upload vers Supabase Storage
-                    response = supabase.storage.from_("devis").upload(path, file_obj, {
-                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"})
+                        # 🔹 Générer l'URL publique
+                        url = supabase.storage.from_("devis").get_public_url(file_path)
+                        return url, None
 
-                    file_url = supabase.storage.from_("devis").get_public_url(path)
-                    self.download_button.url = file_url
-                    self.download_button.visible = True
+                    file_bytes = generate_word_doc()
+                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
+
+                    if error:
+                        self.download_button.disabled = True
+                    else:
+                        self.download_button.url = file_url
+                        self.download_button.visible = True
+                        self.download_button.update()
 
 
