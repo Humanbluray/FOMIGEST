@@ -435,7 +435,7 @@ class Devis(ft.Container):
         self.new_remise = ft.TextField(**readonly_field_style, width=60, label="remise", value="0")
         self.bt_create_dev = AnyButton(FIRST_COLOR, "check", "Créer devis", "white", 180, self.create_new_devis)
         self.new_window = ft.Card(
-            elevation=20, surface_tint_color="#f0f0f6", width=900, height=660,
+            elevation=20, surface_tint_color="#f0f0f6", width=900, height=700,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0), expand=True,
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
@@ -577,7 +577,7 @@ class Devis(ft.Container):
         self.bt_valid_modif = AnyButton(FIRST_COLOR, "check", "Valider Modifications", "white", 230, self.update_devis)
         self.bt_print_options = AnyButton(FIRST_COLOR, "print_outlined", "Imprimer devis", "white", 230, self.open_impression_window)
         self.edit_window = ft.Card(
-            elevation=20, surface_tint_color="#f0f0f6", width=900, height=650,
+            elevation=20, surface_tint_color="#f0f0f6", width=900, height=700,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0), expand=True,
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
