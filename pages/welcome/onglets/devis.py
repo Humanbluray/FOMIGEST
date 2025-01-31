@@ -1397,7 +1397,7 @@ class Devis(ft.Container):
                     footer = section.footer
                     footer_paragraph = footer.paragraphs[0]
                     # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                    header_paragraph.add_run().add_picture("assets/images/header.png", width=Inches(6.5))
                     # Ajouter l'image dans le pied de page
                     footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
