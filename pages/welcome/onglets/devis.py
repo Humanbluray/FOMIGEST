@@ -1361,6 +1361,18 @@ class Devis(ft.Container):
     def close_impression_window(self, e):
         self.impression_window.scale = 0
         self.impression_window.update()
+        self.regime.value = None
+        self.tva.value = None
+        self.ir.value = None
+        self.banque.value = None
+        self.mask_button.visible = True
+        self.download_button.visible = False
+        self.download_button.url = None
+
+        for widget in (
+            self.regime, self.tva, self.ir, self.banque, self.mask_button, self.download_button
+        ):
+            widget.update()
 
     def imprimer_devis(self, e: ft.FilePickerResultEvent):
         regime = self.regime.value
@@ -1389,17 +1401,21 @@ class Devis(ft.Container):
 
                     section.left_margin = Cm(1.5)  # Marge gauche
                     section.right_margin = Cm(1.5)  # Marge droite
-                    section.top_margin = Cm(1.5)  # Marge haute
-                    section.bottom_margin = Cm(1.5)  # Marge basse
+                    section.top_margin = Cm(0.5)  # Marge haute
+                    section.bottom_margin = Cm(0.5)  # Marge basse
 
                     header = section.header
                     header_paragraph = header.paragraphs[0]
                     footer = section.footer
                     footer_paragraph = footer.paragraphs[0]
+
+                    header_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                    footer_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
                     # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.png", width=Inches(6.5))
+                    header_paragraph.add_run().add_picture("assets/images/header.png", width=Cm(18))
                     # Ajouter l'image dans le pied de page
-                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Cm(18))
 
                 header_and_footer()
 
@@ -1420,17 +1436,17 @@ class Devis(ft.Container):
                     run1 = paragraph1.add_run("PROFORMA")
                     paragraph1.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     run1.font.name = "Arial Black"
-                    run1.font.size = Pt(16)
-                    cell1_1.paragraphs[0].paragraph_format.space_before = 0  # Pas d'espace avant le paragraphe
-                    cell1_1.paragraphs[0].paragraph_format.space_after = 0  # Pas d'espace après le paragraphe
-                    cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(25)  # Espacement entre les lignes réduit
+                    run1.font.size = Pt(14)
+                    cell1_1.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(20)  # Espacement entre les lignes réduit
 
                     cell1_2 = table1.cell(1, 0)
                     paragraph2 = cell1_2.paragraphs[0]
                     run2 = paragraph2.add_run(f"{num_proforma}")
                     paragraph2.alignment = WD_ALIGN_PARAGRAPH.CENTER
                     run2.font.name = "calibri"
-                    run2.font.size = Pt(12)
+                    run2.font.size = Pt(11)
                     cell1_2.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
                     cell1_2.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
                     cell1_2.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
@@ -1439,8 +1455,8 @@ class Devis(ft.Container):
                     paragraph3 = cell1_3.paragraphs[0]
                     run3 = paragraph3.add_run(f"Suivant demande du {ecrire_date(date)}")
                     paragraph3.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                    run2.font.name = "calibri"
-                    run2.font.size = Pt(12)
+                    run3.font.name = "calibri"
+                    run3.font.size = Pt(11)
                     cell1_3.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
                     cell1_3.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
                     cell1_3.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
@@ -1460,38 +1476,37 @@ class Devis(ft.Container):
                     table1 = cell1.add_table(rows=4, cols=1)  # Tableau avec 4 lignes et 1 colonne
                     cell1_1 = table1.cell(0, 0)
                     paragraph1 = cell1_1.paragraphs[0]
-                    run1 = paragraph1.add_run(f"Client: {client}")
+                    run1 = paragraph1.add_run(f"Client:   {client}")
                     paragraph1.alignment = WD_ALIGN_PARAGRAPH.LEFT
                     run1.font.name = "calibri"
-                    run1.font.size = Pt(12)
-                    cell1_1.paragraphs[0].paragraph_format.space_before = 0  # Pas d'espace avant le paragraphe
-                    cell1_1.paragraphs[0].paragraph_format.space_after = 0  # Pas d'espace après le paragraphe
-                    cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(
-                        20)  # Espacement entre les lignes réduit
+                    run1.font.size = Pt(11)
+                    cell1_1.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
 
                     cell1_2 = table1.cell(1, 0)
                     paragraph2 = cell1_2.paragraphs[0]
-                    run2 = paragraph2.add_run(f"Contact: {contact}")
+                    run2 = paragraph2.add_run(f"Contact:   {contact}")
                     paragraph2.alignment = WD_ALIGN_PARAGRAPH.LEFT
                     run2.font.name = "calibri"
-                    run2.font.size = Pt(12)
+                    run2.font.size = Pt(11)
                     cell1_2.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
                     cell1_2.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
                     cell1_2.paragraphs[0].paragraph_format.line_spacing = Pt(15)
 
                     cell1_3 = table1.cell(2, 0)
                     paragraph3 = cell1_3.paragraphs[0]
-                    run3 = paragraph3.add_run(f"NUI: {nui}")
+                    run3 = paragraph3.add_run(f"NUI:   {nui}")
                     paragraph3.alignment = WD_ALIGN_PARAGRAPH.LEFT
                     run3.font.name = "calibri"
-                    run3.font.size = Pt(12)
+                    run3.font.size = Pt(11)
                     cell1_3.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
                     cell1_3.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
                     cell1_3.paragraphs[0].paragraph_format.line_spacing = Pt(15)
 
                     cell1_4 = table1.cell(3, 0)
                     paragraph4 = cell1_4.paragraphs[0]
-                    run4 = paragraph4.add_run(f"RC: {rc}")
+                    run4 = paragraph4.add_run(f"RC:   {rc}")
                     paragraph4.alignment = WD_ALIGN_PARAGRAPH.LEFT
                     run4.font.name = "calibri"
                     run4.font.size = Pt(12)
@@ -1548,7 +1563,7 @@ class Devis(ft.Container):
                 else:
                     draw_simple_paragraph(
                         f"Objet: {objet}", WD_PARAGRAPH_ALIGNMENT.LEFT,
-                        10, 10, 12, False, False
+                        10, 10, 11, False, False
                     )
 
                 # References
@@ -1647,7 +1662,7 @@ class Devis(ft.Container):
                 def draw_montants():
                     # Ecrire le montant
                     draw_simple_paragraph(
-                        f"Total: {ajout_separateur(mt_total)}", WD_PARAGRAPH_ALIGNMENT.RIGHT, 10, 1,
+                        f"Total:    {ajout_separateur(mt_total)}", WD_PARAGRAPH_ALIGNMENT.RIGHT, 10, 1,
                         11, False, False
                     )
 
@@ -1661,22 +1676,22 @@ class Devis(ft.Container):
                             mt_nap = mt_ttc - mt_ir
 
                             draw_simple_paragraph(
-                                f"TVA: {ajout_separateur(mt_taxe)}",
+                                f"TVA:    {ajout_separateur(mt_taxe)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
                             draw_simple_paragraph(
-                                f"Montant TTC: {ajout_separateur(mt_ttc)}",
+                                f"Montant TTC:    {ajout_separateur(mt_ttc)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
                             draw_simple_paragraph(
-                                f"IR: {ajout_separateur(mt_ir)}",
+                                f"IR:    {ajout_separateur(mt_ir)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
                             draw_simple_paragraph(
-                                f"NAP: {ajout_separateur(mt_nap)}",
+                                f"NAP:    {ajout_separateur(mt_nap)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
@@ -1699,31 +1714,31 @@ class Devis(ft.Container):
                             mt_nap = mt_ttc - mt_ir
 
                             draw_simple_paragraph(
-                                f"Remise: {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
                             draw_simple_paragraph(
-                                f"Montant remisé: {ajout_separateur(mt_remise)}",
+                                f"Montant remisé:    {ajout_separateur(mt_remise)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
                             draw_simple_paragraph(
-                                f"TVA: {ajout_separateur(mt_taxe)}",
+                                f"TVA:    {ajout_separateur(mt_taxe)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
                             draw_simple_paragraph(
-                                f"Montant TTC: {ajout_separateur(mt_ttc)}",
+                                f"Montant TTC:    {ajout_separateur(mt_ttc)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
                             draw_simple_paragraph(
-                                f"IR: {ajout_separateur(mt_ir)}",
+                                f"IR:    {ajout_separateur(mt_ir)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
                             draw_simple_paragraph(
-                                f"NAP: {ajout_separateur(mt_nap)}",
+                                f"NAP:    {ajout_separateur(mt_nap)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
@@ -1737,19 +1752,19 @@ class Devis(ft.Container):
                             )
 
                     # 2e cas: TVA inactive et IR actif
-                    if not tva and ir:
+                    elif not tva and ir:
 
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
                             mt_ir = int(mt_total*IR_VALUE[regime])
+                            mt_nap = int(mt_total - mt_ir)
                             draw_simple_paragraph(
-                                f"IR: {ajout_separateur(mt_ir)}",
+                                f"IR:    {ajout_separateur(mt_ir)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
-                            mt_nap = int(mt_total - mt_ir)
                             draw_simple_paragraph(
-                                f"NAP: {ajout_separateur(mt_nap)}",
+                                f"NAP:    {ajout_separateur(mt_nap)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
@@ -1764,25 +1779,25 @@ class Devis(ft.Container):
 
                         # Si la remise est non nulle
                         else:
-                            draw_simple_paragraph(
-                                f"Remise: {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
-                                11, False, False
-                            )
                             mt_remise = be.show_info_devis(self.edit_num.value)['montant']
-                            draw_simple_paragraph(
-                                f"Montant Remisé: {ajout_separateur(mt_remise)}",
-                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
-                                11, False, False
-                            )
-                            mt_ir = int(mt_remise*IR_VALUE[regime])
-                            draw_simple_paragraph(
-                                f"IR: {ajout_separateur(mt_ir)}",
-                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
-                                11, False, False
-                            )
+                            mt_ir = int(mt_remise * IR_VALUE[regime])
                             mt_nap = mt_remise - mt_ir
                             draw_simple_paragraph(
-                                f"NAP: {ajout_separateur(mt_nap)}",
+                                f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant Remisé:    {ajout_separateur(mt_remise)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"IR:    {ajout_separateur(mt_ir)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"NAP:    {ajout_separateur(mt_nap)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
@@ -1795,7 +1810,68 @@ class Devis(ft.Container):
                                 11, False, True
                             )
 
-                    # 3e cas TVA et IR inactifs
+                    # 3e Cas: TVA actif IR inactif
+                    elif tva and not ir:
+                        # si la remise est nulle
+                        if int(self.edit_remise.value) == 0:
+                            mt_taxe = int(mt_total * TVA_VALUE)
+                            mt_ttc = mt_total - mt_taxe
+
+                            draw_simple_paragraph(
+                                f"TVA:    {ajout_separateur(mt_taxe)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant TTC:    {ajout_separateur(mt_ttc)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_ttc)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                        # Si la remise est non nulle
+                        else:
+                            rem = int(mt_total * int(self.edit_remise.value) / 100)
+                            mt_remise = mt_total - rem
+                            mt_taxe = int(mt_remise * TVA_VALUE)
+                            mt_ttc = mt_remise - mt_taxe
+
+                            draw_simple_paragraph(
+                                f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant remisé:    {ajout_separateur(mt_remise)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"TVA:    {ajout_separateur(mt_taxe)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant TTC:    {ajout_separateur(mt_ttc)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_ttc)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                    # 4e cas TVA et IR inactifs
                     else:
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
@@ -1814,11 +1890,11 @@ class Devis(ft.Container):
                             mt_remise = mt_total - rem
 
                             draw_simple_paragraph(
-                                f"Remise: {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
                             draw_simple_paragraph(
-                                f"Montant remisé: {ajout_separateur(mt_remise)}",
+                                f"Montant remisé:    {ajout_separateur(mt_remise)}",
                                 WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
@@ -1833,15 +1909,12 @@ class Devis(ft.Container):
 
                 draw_montants()
 
-                pgf = doc.add_paragraph()
-                ajouter_ligne_grise(pgf)
-
                 # NB
                 if be.show_info_devis(self.edit_num.value)["note_bene"] == "" or \
                         be.show_info_devis(self.edit_num.value)["note_bene"] is None:
-                    print(be.show_info_devis(self.edit_num.value)["note_bene"])
+                    pass
+
                 else:
-                    print(be.show_info_devis(self.edit_num.value)["note_bene"])
                     draw_simple_paragraph(
                         f"NB".upper(), WD_PARAGRAPH_ALIGNMENT.LEFT, 1, 3,
                         11, False, True
@@ -1862,8 +1935,10 @@ class Devis(ft.Container):
                                 11, False, False
                             )
 
-                pgf1 = doc.add_paragraph()
-                ajouter_ligne_grise(pgf1)
+                pgf5 = doc.add_paragraph()
+                ajouter_ligne_grise(pgf5)
+                pgf5.paragraph_format.space_before = Pt(0)
+                pgf5.paragraph_format.space_after = Pt(0)
 
                 # Infos (delai lirvaison, point de livraison, paeiment, validité)
                 def draw_other_infos():
@@ -1879,7 +1954,7 @@ class Devis(ft.Container):
                     run2.font.color.rgb = RGBColor(0, 0, 0)
 
                     # point de livraison
-                    run3 = pg1.add_run("                    Point de livraison : ".upper())
+                    run3 = pg1.add_run("                                 Point de livraison : ".upper())
                     run3.font.name = "calibri"
                     run3.font.size = Pt(10)
                     run3.font.color.rgb = RGBColor(175, 175, 175)
@@ -1887,7 +1962,7 @@ class Devis(ft.Container):
                     run4.font.name = "calibri"
                     run4.font.size = Pt(10)
                     run4.font.color.rgb = RGBColor(0, 0, 0)
-
+                    pg1.paragraph_format.space_before = Pt(1)
                     pg1.paragraph_format.space_after = Pt(3)
 
                     pg2 = doc.add_paragraph()
@@ -1909,12 +1984,11 @@ class Devis(ft.Container):
                     run8.font.name = "calibri"
                     run8.font.size = Pt(10)
                     run8.font.color.rgb = RGBColor(0, 0, 0)
-                    pg2.paragraph_format.space_after = Pt(3)
+                    pg1.paragraph_format.space_before = Pt(0)
+                    pg2.paragraph_format.space_after = Pt(0)
+                    ajouter_ligne_grise(pg2)
 
                 draw_other_infos()
-
-                pgf3 = doc.add_paragraph()
-                ajouter_ligne_grise(pgf3)
 
                 def draw_banque():
                     pg_banque = doc.add_paragraph()
@@ -1923,6 +1997,7 @@ class Devis(ft.Container):
                     run1.font.size = Pt(10)
                     run1.font.italic = True
                     run1.font.color.rgb = RGBColor(175, 175, 175)
+                    pg_banque.paragraph_format.space_after = Pt(1)
 
                     draw_simple_paragraph(
                         f"Par virement à {ENTITE_BANQUE[banque]}, IBAN {ENTITE_IBAN[banque]}".upper(),
