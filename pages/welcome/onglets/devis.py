@@ -2,6 +2,7 @@ from utils import *
 import flet as ft
 import backend as be
 from utils.useful_functions import ajout_separateur, ecrire_en_lettres, ecrire_date
+from utils.constantes import *
 import datetime
 from docx import Document
 from docx.shared import Pt, Cm, Inches, RGBColor
@@ -775,12 +776,17 @@ class Devis(ft.Container):
             label_style=ft.TextStyle(size=12, font_family="Poppins Medium"), active_color="white", check_color=FIRST_COLOR,
             label="IR", label_position=ft.LabelPosition.RIGHT
         )
+        self.mask_button = AnyButton(
+            "white", None, "Télécharger fichier", FIRST_COLOR, 280, None
+        )
         self.download_button = AnyButton(
-            FIRST_COLOR, "edit", "Télécharger fichier", "white", 200, None
+            FIRST_COLOR, "edit", "Télécharger fichier", "white", 280, None
         )
         self.download_button.visible = False
+        self.mask_button.disabled = True
+
         self.impression_window = ft.Card(
-            elevation=20, surface_tint_color="#f0f0f6", width=350, height=500,
+            elevation=20, surface_tint_color="#f0f0f6", width=350, height=450,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0), expand=True,
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
@@ -830,6 +836,7 @@ class Devis(ft.Container):
                                 FIRST_COLOR, ft.icons.LOCAL_PRINTSHOP_OUTLINED, "Imprimer", "white", 280,
                                 self.imprimer_devis
                             ),
+                            self.mask_button,
                             self.download_button
                         ], horizontal_alignment=ft.CrossAxisAlignment.CENTER
                     )
@@ -1236,7 +1243,7 @@ class Devis(ft.Container):
 
         be.update_devis(
             mt, int(self.edit_remise.value), self.edit_notabene.value, self.edit_delai.value, self.edit_point_liv.value,
-            int(self.edit_validite.value), int(self.edit_paiement.value), num_devis
+            int(self.edit_validite.value), int(self.edit_paiement.value), self.edit_objet.value, num_devis
         )
 
         # on supprime les details devis précéédents
@@ -1252,6 +1259,11 @@ class Devis(ft.Container):
         self.load_datas()
         self.table.update()
         self.results.update()
+        self.facture_window.scale = 0
+        self.facture_window.update()
+        self.main_window.opacity = 1
+        self.main_window.disabled = False
+        self.main_window.update()
 
         self.cp.box.title.value = "Validé"
         self.cp.box.content.value = "devis mis à jour".capitalize()
@@ -1354,637 +1366,618 @@ class Devis(ft.Container):
         regime = self.regime.value
         tva = self.tva.value
         ir = self.ir.value
+        banque = self.banque.value
 
-        # Cas du régime simplifié
-        if self.regime.value == "S":
+        # Si la TVA est Active
+        if tva and regime == "S":
+            # Erreur
+            self.cp.box.title.value = "Erreur"
+            self.cp.box.content.value = "Pas de TVA dans le régime simplifié"
+            self.cp.box.open = True
+            self.cp.box.update()
 
-            # Si la TVA est Active
-            if tva is True:
-                # Erreur
-                self.cp.box.title.value = "Erreur"
-                self.cp.box.content.value = "Pas de TVA dans le régime simplifié"
-                self.cp.box.open = True
-                self.cp.box.update()
+        # Pour tout autre cas
+        else:
+            # generer le document word
+            total_prix = 0
+            def generate_word_doc():
+                doc = Document()
 
-            # Si la TVA n'est pas active
-            else:
-                # Si l'IR est active
-                if ir is True:
-                    # generer le document word
-                    total_prix = 0
-                    def generate_word_doc():
-                        doc = Document()
+                # Ajouter une image dans l'en-tête
+                def header_and_footer():
+                    section = doc.sections[0]
 
-                        # Ajouter une image dans l'en-tête
-                        def header_and_footer():
-                            section = doc.sections[0]
-                            header = section.header
-                            header_paragraph = header.paragraphs[0]
-                            footer = section.footer
-                            footer_paragraph = footer.paragraphs[0]
-                            # Ajouter l'image dans l'en-tête
-                            header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                            # Ajouter l'image dans le pied de page
-                            footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                    section.left_margin = Cm(1.5)  # Marge gauche
+                    section.right_margin = Cm(1.5)  # Marge droite
+                    section.top_margin = Cm(1.5)  # Marge haute
+                    section.bottom_margin = Cm(1.5)  # Marge basse
 
-                        header_and_footer()
+                    header = section.header
+                    header_paragraph = header.paragraphs[0]
+                    footer = section.footer
+                    footer_paragraph = footer.paragraphs[0]
+                    # Ajouter l'image dans l'en-tête
+                    header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
+                    # Ajouter l'image dans le pied de page
+                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
 
-                        # Créer un tableau principal avec une seule ligne et deux colonnes pour entete client
-                        main_table = doc.add_table(rows=1, cols=2)
+                header_and_footer()
 
-                        # Entête infos facture
-                        def entete_facture():
-                            # Ajouter un tableau dans la première cellule
-                            cell1 = main_table.cell(0, 0)
-                            num_proforma = self.edit_num.value
-                            suivant = "Suivant proforma N°"
-                            date = be.show_info_devis(num_proforma)["date"]
+                # Créer un tableau principal avec une seule ligne et deux colonnes pour entete client
+                main_table = doc.add_table(rows=1, cols=2)
 
-                            table1 = cell1.add_table(rows=4, cols=1)  # Tableau avec 4 lignes et 1 colonne
-                            cell1_1 = table1.cell(0, 0)
-                            paragraph1 = cell1_1.paragraphs[0]
-                            run1 = paragraph1.add_run("PROFORMA")
-                            paragraph1.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                            run1.font.name = "Arial Black"
-                            run1.font.size = Pt(16)
-                            cell1_1.paragraphs[0].paragraph_format.space_before = 0  # Pas d'espace avant le paragraphe
-                            cell1_1.paragraphs[0].paragraph_format.space_after = 0  # Pas d'espace après le paragraphe
-                            cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(25)  # Espacement entre les lignes réduit
+                # Entête infos facture
+                def entete_facture():
+                    # Ajouter un tableau dans la première cellule
+                    cell1 = main_table.cell(0, 0)
+                    num_proforma = self.edit_num.value
+                    suivant = "Suivant proforma N°"
+                    date = be.show_info_devis(num_proforma)["date"]
 
-                            cell1_2 = table1.cell(1, 0)
-                            paragraph2 = cell1_2.paragraphs[0]
-                            run2 = paragraph2.add_run(f"{num_proforma}")
-                            paragraph2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                            run2.font.name = "calibri"
-                            run2.font.size = Pt(12)
-                            cell1_2.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
-                            cell1_2.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
-                            cell1_2.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
+                    table1 = cell1.add_table(rows=4, cols=1)  # Tableau avec 4 lignes et 1 colonne
+                    cell1_1 = table1.cell(0, 0)
+                    paragraph1 = cell1_1.paragraphs[0]
+                    run1 = paragraph1.add_run("PROFORMA")
+                    paragraph1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    run1.font.name = "Arial Black"
+                    run1.font.size = Pt(16)
+                    cell1_1.paragraphs[0].paragraph_format.space_before = 0  # Pas d'espace avant le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.space_after = 0  # Pas d'espace après le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(25)  # Espacement entre les lignes réduit
 
-                            cell1_3 = table1.cell(2, 0)
-                            paragraph3 = cell1_3.paragraphs[0]
-                            run3 = paragraph3.add_run(f"Suivant demande du {ecrire_date(date)}")
-                            paragraph3.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                            run2.font.name = "calibri"
-                            run2.font.size = Pt(12)
-                            cell1_3.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
-                            cell1_3.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
-                            cell1_3.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
+                    cell1_2 = table1.cell(1, 0)
+                    paragraph2 = cell1_2.paragraphs[0]
+                    run2 = paragraph2.add_run(f"{num_proforma}")
+                    paragraph2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    run2.font.name = "calibri"
+                    run2.font.size = Pt(12)
+                    cell1_2.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_2.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_2.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
 
-                        entete_facture()
+                    cell1_3 = table1.cell(2, 0)
+                    paragraph3 = cell1_3.paragraphs[0]
+                    run3 = paragraph3.add_run(f"Suivant demande du {ecrire_date(date)}")
+                    paragraph3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    run2.font.name = "calibri"
+                    run2.font.size = Pt(12)
+                    cell1_3.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_3.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_3.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
 
-                        # Entete infos client
-                        def entete_infos_client():
-                            # Ajouter un tableau dans la première cellule
-                            cell1 = main_table.cell(0, 1)
-                            client_id = be.show_info_devis(self.edit_num.value)["client"]
-                            client = be.infos_clients(client_id)["nom"]
-                            contact = be.infos_clients(client_id)["contact"]
-                            nui = be.infos_clients(client_id)["NUI"]
-                            rc = be.infos_clients(client_id)["RC"]
+                entete_facture()
 
-                            table1 = cell1.add_table(rows=4, cols=1)  # Tableau avec 4 lignes et 1 colonne
-                            cell1_1 = table1.cell(0, 0)
-                            paragraph1 = cell1_1.paragraphs[0]
-                            run1 = paragraph1.add_run(f"Client: {client}")
-                            paragraph1.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                            run1.font.name = "calibri"
-                            run1.font.size = Pt(12)
-                            cell1_1.paragraphs[0].paragraph_format.space_before = 0  # Pas d'espace avant le paragraphe
-                            cell1_1.paragraphs[0].paragraph_format.space_after = 0  # Pas d'espace après le paragraphe
-                            cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(
-                                20)  # Espacement entre les lignes réduit
+                # Entete infos client
+                def entete_infos_client():
+                    # Ajouter un tableau dans la première cellule
+                    cell1 = main_table.cell(0, 1)
+                    client_id = be.show_info_devis(self.edit_num.value)["client"]
+                    client = be.infos_clients(client_id)["nom"]
+                    contact = be.infos_clients(client_id)["contact"]
+                    nui = be.infos_clients(client_id)["NUI"]
+                    rc = be.infos_clients(client_id)["RC"]
 
-                            cell1_2 = table1.cell(1, 0)
-                            paragraph2 = cell1_2.paragraphs[0]
-                            run2 = paragraph2.add_run(f"Contact: {contact}")
-                            paragraph2.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                            run2.font.name = "calibri"
-                            run2.font.size = Pt(12)
-                            cell1_2.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
-                            cell1_2.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
-                            cell1_2.paragraphs[0].paragraph_format.line_spacing = Pt(15)
+                    table1 = cell1.add_table(rows=4, cols=1)  # Tableau avec 4 lignes et 1 colonne
+                    cell1_1 = table1.cell(0, 0)
+                    paragraph1 = cell1_1.paragraphs[0]
+                    run1 = paragraph1.add_run(f"Client: {client}")
+                    paragraph1.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    run1.font.name = "calibri"
+                    run1.font.size = Pt(12)
+                    cell1_1.paragraphs[0].paragraph_format.space_before = 0  # Pas d'espace avant le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.space_after = 0  # Pas d'espace après le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(
+                        20)  # Espacement entre les lignes réduit
 
-                            cell1_3 = table1.cell(2, 0)
-                            paragraph3 = cell1_3.paragraphs[0]
-                            run3 = paragraph3.add_run(f"NUI: {nui}")
-                            paragraph3.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                            run3.font.name = "calibri"
-                            run3.font.size = Pt(12)
-                            cell1_3.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
-                            cell1_3.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
-                            cell1_3.paragraphs[0].paragraph_format.line_spacing = Pt(15)
+                    cell1_2 = table1.cell(1, 0)
+                    paragraph2 = cell1_2.paragraphs[0]
+                    run2 = paragraph2.add_run(f"Contact: {contact}")
+                    paragraph2.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    run2.font.name = "calibri"
+                    run2.font.size = Pt(12)
+                    cell1_2.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_2.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_2.paragraphs[0].paragraph_format.line_spacing = Pt(15)
 
-                            cell1_4 = table1.cell(3, 0)
-                            paragraph4 = cell1_4.paragraphs[0]
-                            run4 = paragraph4.add_run(f"RC: {rc}")
-                            paragraph4.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                            run4.font.name = "calibri"
-                            run4.font.size = Pt(12)
-                            cell1_4.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
-                            cell1_4.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
-                            cell1_4.paragraphs[0].paragraph_format.line_spacing = Pt(15)
+                    cell1_3 = table1.cell(2, 0)
+                    paragraph3 = cell1_3.paragraphs[0]
+                    run3 = paragraph3.add_run(f"NUI: {nui}")
+                    paragraph3.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    run3.font.name = "calibri"
+                    run3.font.size = Pt(12)
+                    cell1_3.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_3.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_3.paragraphs[0].paragraph_format.line_spacing = Pt(15)
 
-                        entete_infos_client()
+                    cell1_4 = table1.cell(3, 0)
+                    paragraph4 = cell1_4.paragraphs[0]
+                    run4 = paragraph4.add_run(f"RC: {rc}")
+                    paragraph4.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    run4.font.name = "calibri"
+                    run4.font.size = Pt(12)
+                    cell1_4.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_4.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_4.paragraphs[0].paragraph_format.line_spacing = Pt(15)
 
-                        # Objet
-                        def draw_simple_paragraph(
-                                text: str, alignment, before: int, after: int, font_size: int,
-                                is_italic: bool, is_bold: bool):
-                            details_pg = doc.add_paragraph()
-                            details_pg.alignment = alignment
-                            details_pg_format = details_pg.paragraph_format
-                            details_pg_format.space_before = Pt(before)  # Espace avant le paragraphe
-                            details_pg_format.space_after = Pt(after)
-                            details_pg_format.line_spacing = 1
-                            run_details_header = details_pg.add_run(text)  # Run 1 Separation
-                            run_details_header.font.name = "calibri"
-                            run_details_header.font.size = Pt(font_size)
-                            run_details_header.italic = is_italic
-                            run_details_header.bold = is_bold
+                entete_infos_client()
 
-                        # Objet
-                        objet = be.show_info_devis(self.edit_num.value)['objet']
-                        if objet == "" or objet is None:
-                            pass
-                        else:
-                            draw_simple_paragraph(
-                                f"Objet: {objet}", WD_PARAGRAPH_ALIGNMENT.LEFT,
-                                10, 10, 12, False, False
-                            )
+                # Fonction d'ajout ligne
+                def ajouter_ligne_grise(paragraph):
+                    p = paragraph._element  # Récupérer l'élément XML du paragraphe
+                    pPr = p.find("w:pPr", paragraph._element.nsmap)  # Chercher les propriétés du paragraphe
 
-                        # References
-                        def draw_details_devis():
-                            details = be.find_devis_details(self.edit_num.value)
-                            longueur = len(details) + 1
+                    if pPr is None:
+                        pPr = OxmlElement("w:pPr")
+                        p.insert(0, pPr)
 
-                            # Créer un tableau avec 3 lignes et 6 colonnes
-                            table = doc.add_table(rows=longueur, cols=6)
+                    pbdr = OxmlElement("w:pBdr")  # Élément pour les bordures
 
-                            # Appliquer des bordures au tableau entier
-                            # Ajouter des bordures noires à chaque cellule
-                            def set_cell_border(cell):
-                                """ Ajoute une bordure noire autour d'une cellule """
-                                tc_pr = cell._element.get_or_add_tcPr()
-                                borders = OxmlElement('w:tcBorders')
+                    # Définir la bordure inférieure (ligne grise)
+                    bottom_border = OxmlElement("w:bottom")
+                    bottom_border.set("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val",
+                                      "single")  # Type de ligne (simple)
+                    bottom_border.set("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}sz",
+                                      "6")  # Épaisseur de la ligne (6 = 0.5 pt)
+                    bottom_border.set("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}space",
+                                      "1")  # Espacement avec le texte
+                    bottom_border.set("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}color",
+                                      "808080")  # Couleur grise en hexadécimal
 
-                                for border_name in ['top', 'left', 'bottom', 'right']:
-                                    border = OxmlElement(f'w:{border_name}')
-                                    border.set(qn('w:val'), 'single')  # Bordure simple
-                                    border.set(qn('w:sz'),
-                                               '8')  # Taille de la bordure (plus épais pour meilleure visibilité)
-                                    border.set(qn('w:space'), '0')
-                                    border.set(qn('w:color'), '000000')  # Noir
-                                    borders.append(border)
+                    pbdr.append(bottom_border)  # Ajouter la bordure aux propriétés du paragraphe
+                    pPr.append(pbdr)  # Appliquer la bordure au paragraphe
 
-                                tc_pr.append(borders)
+                # Fonction d'écriture
+                def draw_simple_paragraph(text: str, alignment, before: int, after: int, font_size: int, is_italic: bool, is_bold: bool):
+                    details_pg = doc.add_paragraph()
+                    details_pg.alignment = alignment
+                    details_pg_format = details_pg.paragraph_format
+                    details_pg_format.space_before = Pt(before)  # Espace avant le paragraphe
+                    details_pg_format.space_after = Pt(after)
+                    details_pg_format.line_spacing = 1
+                    run_details_header = details_pg.add_run(text)  # Run 1 Separation
+                    run_details_header.font.name = "calibri"
+                    run_details_header.font.size = Pt(font_size)
+                    run_details_header.italic = is_italic
+                    run_details_header.bold = is_bold
 
-                            # Appliquer les bordures à toutes les cellules
-                            for row in table.rows:
-                                for cell in row.cells:
-                                    set_cell_border(cell)
+                # Objet
+                objet = be.show_info_devis(self.edit_num.value)['objet']
 
+                if objet == "" or objet is None:
+                    pass
+                else:
+                    draw_simple_paragraph(
+                        f"Objet: {objet}", WD_PARAGRAPH_ALIGNMENT.LEFT,
+                        10, 10, 12, False, False
+                    )
 
-                            # Définir la largeur spécifique des colonnes (en centimètres)
-                            column_widths = [Cm(1), Cm(12), Cm(1.5), Cm(1), Cm(2), Cm(2.5)]  # Largeurs des colonnes
+                # References
+                def draw_details_devis():
+                    details = be.find_devis_details(self.edit_num.value)
+                    longueur = len(details) + 1
 
-                            # Appliquer les largeurs de colonnes
-                            for col_idx, width in enumerate(column_widths):
-                                for row in table.rows:
-                                    row.cells[col_idx].width = width  # Définir la largeur de la cellule
+                    # Créer un tableau avec 3 lignes et 6 colonnes
+                    table = doc.add_table(rows=longueur, cols=6)
 
-                            # Ajouter les en-têtes (ligne 0)
-                            hdr_cells = table.rows[0].cells
-                            headers = ["item", "Désignation", "Qté", "U", "Prix", "total (CFA)"]
-                            for i, hdr in enumerate(headers):
-                                paragraph = hdr_cells[i].paragraphs[0]
-                                run = paragraph.add_run(hdr)
-                                run.bold = True
-                                run.font.name = "Calibri"
-                                run.font.size = Pt(10)
+                    # Appliquer des bordures au tableau entier
+                    # Ajouter des bordures noires à chaque cellule
+                    def set_cell_border(cell):
+                        """ Ajoute une bordure noire autour d'une cellule """
+                        tc_pr = cell._element.get_or_add_tcPr()
+                        borders = OxmlElement('w:tcBorders')
 
-                                # Centrer horizontalement
-                                paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-                                # Centrer verticalement
+                        for border_name in ['top', 'left', 'bottom', 'right']:
+                            border = OxmlElement(f'w:{border_name}')
+                            border.set(qn('w:val'), 'single')  # Bordure simple
+                            border.set(qn('w:sz'),
+                                       '8')  # Taille de la bordure (plus épais pour meilleure visibilité)
+                            border.set(qn('w:space'), '0')
+                            border.set(qn('w:color'), '000000')  # Noir
+                            borders.append(border)
 
+                        tc_pr.append(borders)
 
-                            # Ajouter des données dans les 2 autres lignes (lignes 1 et 2) avec des nombres aléatoires
-                            for i, row in enumerate(table.rows[1:]):  # i commence à 0 pour la première ligne de données
-                                # Indice de la ligne (Ligne 1, Ligne 2, etc.)
-                                details = be.find_devis_details(self.edit_num.value)
-                                values = [f"{i }", str(details[i]["designation"]), str(details[i]["qte"]),
-                                          str(details[i]["unite"]), str(ajout_separateur(details[i]["prix"])),
-                                          str(ajout_separateur(details[i]["prix"]*details[i]["qte"]))
-                                ]
-
-                                for j, cell in enumerate(row.cells):
-                                    paragraph = cell.paragraphs[0]
-                                    run = paragraph.add_run(values[j])
-                                    run.font.name = "Calibri"
-                                    run.font.size = Pt(10)
-                                    paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER  # Centrer le texte
-                                    cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+                    # Appliquer les bordures à toutes les cellules
+                    for row in table.rows:
+                        for cell in row.cells:
+                            set_cell_border(cell)
 
 
+                    # Définir la largeur spécifique des colonnes (en centimètres)
+                    column_widths = [Cm(1), Cm(12), Cm(1.5), Cm(1), Cm(2), Cm(2.5)]  # Largeurs des colonnes
 
-                            # Appliquer des bordures noires à chaque cellule
-                            # for row in table.rows:
-                            #     for cell in row.cells:
-                            #         cell._element.get_or_add_tcPr().append(OxmlElement('w:tcBorders'))
-                            #         borders = cell._element.xpath('.//w:tcBorders')[0]
-                            #         for border in borders:
-                            #             border.set(qn('w:top'), 'single')
-                            #             border.set(qn('w:left'), 'single')
-                            #             border.set(qn('w:bottom'), 'single')
-                            #             border.set(qn('w:right'), 'single')
+                    # Appliquer les largeurs de colonnes
+                    for col_idx, width in enumerate(column_widths):
+                        for row in table.rows:
+                            row.cells[col_idx].width = width  # Définir la largeur de la cellule
 
-                        draw_details_devis()
+                    # Ajouter les en-têtes (ligne 0)
+                    hdr_cells = table.rows[0].cells
+                    headers = ["item", "Désignation", "Qté", "U", "Prix", "total (CFA)"]
+                    for i, hdr in enumerate(headers):
+                        paragraph = hdr_cells[i].paragraphs[0]
+                        run = paragraph.add_run(hdr)
+                        run.bold = True
+                        run.font.name = "Calibri"
+                        run.font.size = Pt(10)
 
-                        # Montant total
-                        mt_total = 0
+                        # Centrer horizontalement
+                        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                        # Centrer verticalement
+
+
+                    # Ajouter des données dans les 2 autres lignes (lignes 1 et 2) avec des nombres aléatoires
+                    for i, row in enumerate(table.rows[1:]):  # i commence à 0 pour la première ligne de données
+                        # Indice de la ligne (Ligne 1, Ligne 2, etc.)
                         details = be.find_devis_details(self.edit_num.value)
-                        for row in details:
-                            mt_total += row["qte"]*row["prix"]
+                        values = [f"{i }", str(details[i]["designation"]), str(details[i]["qte"]),
+                                  str(details[i]["unite"]), str(ajout_separateur(details[i]["prix"])),
+                                  str(ajout_separateur(details[i]["prix"]*details[i]["qte"]))
+                        ]
 
-                        def draw_montants():
+                        for j, cell in enumerate(row.cells):
+                            paragraph = cell.paragraphs[0]
+                            run = paragraph.add_run(values[j])
+                            run.font.name = "Calibri"
+                            run.font.size = Pt(10)
+                            paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER  # Centrer le texte
+                            cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+
+
+
+                    # Appliquer des bordures noires à chaque cellule
+                    # for row in table.rows:
+                    #     for cell in row.cells:
+                    #         cell._element.get_or_add_tcPr().append(OxmlElement('w:tcBorders'))
+                    #         borders = cell._element.xpath('.//w:tcBorders')[0]
+                    #         for border in borders:
+                    #             border.set(qn('w:top'), 'single')
+                    #             border.set(qn('w:left'), 'single')
+                    #             border.set(qn('w:bottom'), 'single')
+                    #             border.set(qn('w:right'), 'single')
+
+                draw_details_devis()
+
+                # Montant total
+                mt_total = 0
+                details = be.find_devis_details(self.edit_num.value)
+                for row in details:
+                    mt_total += row["qte"]*row["prix"]
+
+                def draw_montants():
+                    # Ecrire le montant
+                    draw_simple_paragraph(
+                        f"Total: {ajout_separateur(mt_total)}", WD_PARAGRAPH_ALIGNMENT.RIGHT, 10, 1,
+                        11, False, False
+                    )
+
+                    # 1er cas TVA active et IR actif
+                    if tva and ir:
+                        # si la remise est nulle
+                        if int(self.edit_remise.value) == 0:
+                            mt_taxe = int(mt_total * TVA_VALUE)
+                            mt_ttc = mt_total - mt_taxe
+                            mt_ir = int(mt_total * IR_VALUE[regime])
+                            mt_nap = mt_ttc - mt_ir
+
                             draw_simple_paragraph(
-                                f"Total: {ajout_separateur(mt_total)}", WD_PARAGRAPH_ALIGNMENT.RIGHT, 10, 1,
+                                f"TVA: {ajout_separateur(mt_taxe)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
                                 11, False, False
                             )
-                            if int(self.edit_remise.value) == 0:
-                                mt_ir = int(mt_total*2.2/100)
-                                draw_simple_paragraph(
-                                    f"IR: {ajout_separateur(mt_ir)} %",
-                                    WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
-                                    11, False, False
-                                )
-                                mt_nap = int(mt_total - mt_ir)
-                                draw_simple_paragraph(
-                                    f"NAP: {ajout_separateur(mt_nap)} %",
-                                    WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
-                                    11, False, False
-                                )
-                            else:
-                                draw_simple_paragraph(
-                                    f"Remise: {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
-                                    11, False, False
-                                )
-                                mt_remise = be.show_info_devis(self.edit_num.value)['montant']
-                                draw_simple_paragraph(
-                                    f"Montant Remisé: {ajout_separateur(mt_remise)} %",
-                                    WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
-                                    11, False, False
-                                )
-                                mt_ir = int(mt_remise*2.2/100)
-                                draw_simple_paragraph(
-                                    f"IR: {ajout_separateur(mt_ir)} %",
-                                    WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
-                                    11, False, False
-                                )
-                                mt_nap = mt_remise - mt_ir
-                                draw_simple_paragraph(
-                                    f"NAP: {ajout_separateur(mt_nap)} %",
-                                    WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
-                                    11, False, False
-                                )
-
+                            draw_simple_paragraph(
+                                f"Montant TTC: {ajout_separateur(mt_ttc)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"IR: {ajout_separateur(mt_ir)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"NAP: {ajout_separateur(mt_nap)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
                             draw_simple_paragraph(
                                 f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
                                 10, True, False
                             )
                             draw_simple_paragraph(
-                                f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 10,
+                                f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
                                 11, False, True
                             )
 
-                            if be.show_info_devis(self.edit_num.value)["note_bene"] == "" or \
-                                    be.show_info_devis(self.edit_num.value)["note_bene"] is None:
-                                pass
-                            else:
-                                draw_simple_paragraph(
-                                    f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 10,
-                                    11, False, True
-                                )
-                                observations = be.show_info_devis(self.edit_num.value)["note_bene"].split(";")
-                                for observ in observations:
-                                    draw_simple_paragraph(
-                                        f"{observ}", WD_PARAGRAPH_ALIGNMENT.LEFT, 20, 10,
-                                        11, False, False
-                                    )
+                        # Si la remise est non nulle
+                        else:
+                            rem = int(mt_total * int(self.edit_remise.value)/100)
+                            mt_remise = mt_total - rem
+                            mt_taxe = int(mt_remise * TVA_VALUE)
+                            mt_ttc = mt_remise - mt_taxe
+                            mt_ir = int(mt_total * IR_VALUE[regime])
+                            mt_nap = mt_ttc - mt_ir
 
-                        draw_montants()
+                            draw_simple_paragraph(
+                                f"Remise: {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant remisé: {ajout_separateur(mt_remise)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"TVA: {ajout_separateur(mt_taxe)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant TTC: {ajout_separateur(mt_ttc)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"IR: {ajout_separateur(mt_ir)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"NAP: {ajout_separateur(mt_nap)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
 
+                    # 2e cas: TVA inactive et IR actif
+                    if not tva and ir:
 
+                        # si la remise est nulle
+                        if int(self.edit_remise.value) == 0:
+                            mt_ir = int(mt_total*IR_VALUE[regime])
+                            draw_simple_paragraph(
+                                f"IR: {ajout_separateur(mt_ir)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            mt_nap = int(mt_total - mt_ir)
+                            draw_simple_paragraph(
+                                f"NAP: {ajout_separateur(mt_nap)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
 
+                        # Si la remise est non nulle
+                        else:
+                            draw_simple_paragraph(
+                                f"Remise: {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            mt_remise = be.show_info_devis(self.edit_num.value)['montant']
+                            draw_simple_paragraph(
+                                f"Montant Remisé: {ajout_separateur(mt_remise)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            mt_ir = int(mt_remise*IR_VALUE[regime])
+                            draw_simple_paragraph(
+                                f"IR: {ajout_separateur(mt_ir)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            mt_nap = mt_remise - mt_ir
+                            draw_simple_paragraph(
+                                f"NAP: {ajout_separateur(mt_nap)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
 
-
-
-                        # Enregistrement du fichier
-                        buffer = io.BytesIO()
-                        doc.save(buffer)
-                        buffer.seek(0)
-                        return buffer.getvalue()
-
-                    def upload_to_supabase(file, filename):
-                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
-                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        file_path = f"{time_stamp}_{filename}"
-
-                        # 🔹 Upload vers Supabase Storage
-                        resp = supabase.storage.from_("devis").upload(
-                            file_path,
-                            file,  # Fichier en bytes
-                            file_options={
-                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
-                            # Ajout du MIME type ici
-                        )
-                        # 🔹 Vérification des erreurs
-                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
-                            return None, resp["error"]
-
-                        # 🔹 Générer l'URL publique
-                        url = supabase.storage.from_("devis").get_public_url(file_path)
-                        return url, None
-
-                    file_bytes = generate_word_doc()
-                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
-
-                    if error:
-                        self.download_button.disabled = True
+                    # 3e cas TVA et IR inactifs
                     else:
-                        self.download_button.url = file_url
-                        self.download_button.visible = True
-                        self.download_button.update()
+                        # si la remise est nulle
+                        if int(self.edit_remise.value) == 0:
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_total)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
 
+                        # Si la remise est non nulle
+                        else:
+                            rem = int(mt_total * int(self.edit_remise.value) / 100)
+                            mt_remise = mt_total - rem
 
-                # Si l'IR n'est pos active
+                            draw_simple_paragraph(
+                                f"Remise: {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant remisé: {ajout_separateur(mt_remise)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_remise)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                draw_montants()
+
+                pgf = doc.add_paragraph()
+                ajouter_ligne_grise(pgf)
+
+                # NB
+                if be.show_info_devis(self.edit_num.value)["note_bene"] == "" or \
+                        be.show_info_devis(self.edit_num.value)["note_bene"] is None:
+                    print(be.show_info_devis(self.edit_num.value)["note_bene"])
                 else:
-                    # generer le document word
-                    def generate_word_doc():
-                        doc = Document()
-                        # Ajouter une image dans l'en-tête
-                        section = doc.sections[0]
-                        header = section.header
-                        header_paragraph = header.paragraphs[0]
-                        footer = section.footer
-                        footer_paragraph = footer.paragraphs[0]
-
-                        # Ajouter l'image dans l'en-tête
-                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                        # Ajouter l'image dans le pied de page
-                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
-
-                        buffer = io.BytesIO()
-                        doc.save(buffer)
-                        buffer.seek(0)
-                        return buffer.getvalue()
-
-                    def upload_to_supabase(file, filename):
-                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
-                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        file_path = f"{time_stamp}_{filename}"
-
-                        # 🔹 Upload vers Supabase Storage
-                        resp = supabase.storage.from_("devis").upload(
-                            file_path,
-                            file,  # Fichier en bytes
-                            file_options={
-                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
-                            # Ajout du MIME type ici
+                    print(be.show_info_devis(self.edit_num.value)["note_bene"])
+                    draw_simple_paragraph(
+                        f"NB".upper(), WD_PARAGRAPH_ALIGNMENT.LEFT, 1, 3,
+                        11, False, True
+                    )
+                    observations = be.show_info_devis(self.edit_num.value)["note_bene"].split(";")
+                    if ";" in observations:
+                        print(observations)
+                        draw_simple_paragraph(
+                            f"{observations}", WD_PARAGRAPH_ALIGNMENT.LEFT, 3, 3,
+                            11, False, False
                         )
-                        # 🔹 Vérification des erreurs
-                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
-                            return None, resp["error"]
-
-                        # 🔹 Générer l'URL publique
-                        url = supabase.storage.from_("devis").get_public_url(file_path)
-                        return url, None
-
-                    file_bytes = generate_word_doc()
-                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
-
-                    if error:
-                        self.download_button.disabled = True
                     else:
-                        self.download_button.url = file_url
-                        self.download_button.visible = True
-                        self.download_button.update()
+                        divisions = be.show_info_devis(self.edit_num.value)["note_bene"].split(";")
+                        for observ in divisions:
+                            print(observ)
+                            draw_simple_paragraph(
+                                f"{observ}", WD_PARAGRAPH_ALIGNMENT.LEFT, 3, 3,
+                                11, False, False
+                            )
 
-        # Cas du régime réel
-        else:
-            # Si la TVA est Active
-            if tva is True:
-                if ir is True:
-                    # generer le document word
-                    def generate_word_doc():
-                        doc = Document()
-                        # Ajouter une image dans l'en-tête
-                        section = doc.sections[0]
-                        header = section.header
-                        header_paragraph = header.paragraphs[0]
-                        footer = section.footer
-                        footer_paragraph = footer.paragraphs[0]
+                pgf1 = doc.add_paragraph()
+                ajouter_ligne_grise(pgf1)
 
-                        # Ajouter l'image dans l'en-tête
-                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                        # Ajouter l'image dans le pied de page
-                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                # Infos (delai lirvaison, point de livraison, paeiment, validité)
+                def draw_other_infos():
+                    pg1 = doc.add_paragraph()
+                    # Délai de livraison
+                    run1 = pg1.add_run("délai de livraison : ".upper())
+                    run1.font.name = "calibri"
+                    run1.font.size = Pt(10)
+                    run1.font.color.rgb = RGBColor(175, 175, 175)
+                    run2 = pg1.add_run(f"{be.show_info_devis(self.edit_num.value)["delai"]}".upper())
+                    run2.font.name = "calibri"
+                    run2.font.size = Pt(10)
+                    run2.font.color.rgb = RGBColor(0, 0, 0)
 
-                        buffer = io.BytesIO()
-                        doc.save(buffer)
-                        buffer.seek(0)
-                        return buffer.getvalue()
+                    # point de livraison
+                    run3 = pg1.add_run("                    Point de livraison : ".upper())
+                    run3.font.name = "calibri"
+                    run3.font.size = Pt(10)
+                    run3.font.color.rgb = RGBColor(175, 175, 175)
+                    run4 = pg1.add_run(f"{be.show_info_devis(self.edit_num.value)["point_liv"]}".upper())
+                    run4.font.name = "calibri"
+                    run4.font.size = Pt(10)
+                    run4.font.color.rgb = RGBColor(0, 0, 0)
 
-                    def upload_to_supabase(file, filename):
-                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
-                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        file_path = f"{time_stamp}_{filename}"
+                    pg1.paragraph_format.space_after = Pt(3)
 
-                        # 🔹 Upload vers Supabase Storage
-                        resp = supabase.storage.from_("devis").upload(
-                            file_path,
-                            file,  # Fichier en bytes
-                            file_options={
-                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
-                            # Ajout du MIME type ici
-                        )
-                        # 🔹 Vérification des erreurs
-                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
-                            return None, resp["error"]
+                    pg2 = doc.add_paragraph()
+                    # Paiement
+                    run5 = pg2.add_run("paiement : ".upper())
+                    run5.font.name = "calibri"
+                    run5.font.size = Pt(10)
+                    run5.font.color.rgb = RGBColor(175, 175, 175)
+                    run6 = pg2.add_run(f"{be.show_info_devis(self.edit_num.value)["paiement"]} Jours après dépôt de facture".upper())
+                    run6.font.name = "calibri"
+                    run6.font.size = Pt(10)
+                    run6.font.color.rgb = RGBColor(0, 0, 0)
+                    # Paiement
+                    run7 = pg2.add_run("                    Validité de l'offre : ".upper())
+                    run7.font.name = "calibri"
+                    run7.font.size = Pt(10)
+                    run7.font.color.rgb = RGBColor(175, 175, 175)
+                    run8 = pg2.add_run(f"{be.show_info_devis(self.edit_num.value)["validite"]} mois".upper())
+                    run8.font.name = "calibri"
+                    run8.font.size = Pt(10)
+                    run8.font.color.rgb = RGBColor(0, 0, 0)
+                    pg2.paragraph_format.space_after = Pt(3)
 
-                        # 🔹 Générer l'URL publique
-                        url = supabase.storage.from_("devis").get_public_url(file_path)
-                        return url, None
+                draw_other_infos()
 
-                    file_bytes = generate_word_doc()
-                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
+                pgf3 = doc.add_paragraph()
+                ajouter_ligne_grise(pgf3)
 
-                    if error:
-                        self.download_button.disabled = True
-                    else:
-                        self.download_button.url = file_url
-                        self.download_button.visible = True
-                        self.download_button.update()
+                def draw_banque():
+                    pg_banque = doc.add_paragraph()
+                    run1 = pg_banque.add_run("Information bancaires : ".upper())
+                    run1.font.name = "calibri"
+                    run1.font.size = Pt(10)
+                    run1.font.italic = True
+                    run1.font.color.rgb = RGBColor(175, 175, 175)
 
-                # Si l'IR n'est pos active
-                else:
-                    # generer le document word
-                    def generate_word_doc():
-                        doc = Document()
-                        # Ajouter une image dans l'en-tête
-                        section = doc.sections[0]
-                        header = section.header
-                        header_paragraph = header.paragraphs[0]
-                        footer = section.footer
-                        footer_paragraph = footer.paragraphs[0]
+                    draw_simple_paragraph(
+                        f"Par virement à {ENTITE_BANQUE[banque]}, IBAN {ENTITE_IBAN[banque]}".upper(),
+                        WD_ALIGN_PARAGRAPH.LEFT, 3, 3, 11, False, False
+                    )
+                    draw_simple_paragraph(
+                        f"Code swift {ENTITE_SWIFT[banque]}, titulaire: FOMIDERC SARL".upper(),
+                        WD_ALIGN_PARAGRAPH.LEFT, 3, 3, 11, False, False
+                    )
 
-                        # Ajouter l'image dans l'en-tête
-                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                        # Ajouter l'image dans le pied de page
-                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
+                draw_banque()
 
-                        buffer = io.BytesIO()
-                        doc.save(buffer)
-                        buffer.seek(0)
-                        return buffer.getvalue()
 
-                    def upload_to_supabase(file, filename):
-                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
-                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        file_path = f"{time_stamp}_{filename}"
+                # Enregistrement du fichier
+                buffer = io.BytesIO()
+                doc.save(buffer)
+                buffer.seek(0)
+                return buffer.getvalue()
 
-                        # 🔹 Upload vers Supabase Storage
-                        resp = supabase.storage.from_("devis").upload(
-                            file_path,
-                            file,  # Fichier en bytes
-                            file_options={
-                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
-                            # Ajout du MIME type ici
-                        )
-                        # 🔹 Vérification des erreurs
-                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
-                            return None, resp["error"]
+            # Enregistre sur le bucket supabase
+            def upload_to_supabase(file, filename):
+                """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
+                time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                file_path = f"{time_stamp}_{filename}"
 
-                        # 🔹 Générer l'URL publique
-                        url = supabase.storage.from_("devis").get_public_url(file_path)
-                        return url, None
+                # Upload vers Supabase Storage
+                resp = supabase.storage.from_("devis").upload(
+                    file_path,
+                    file,  # Fichier en bytes
+                    file_options={
+                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+                    # Ajout du MIME type ici
+                )
+                # 🔹 Vérification des erreurs
+                if isinstance(resp, dict) and "error" in resp and resp["error"]:
+                    return None, resp["error"]
 
-                    file_bytes = generate_word_doc()
-                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
+                # 🔹 Générer l'URL publique
+                url = supabase.storage.from_("devis").get_public_url(file_path)
+                return url, None
 
-                    if error:
-                        self.download_button.disabled = True
-                    else:
-                        self.download_button.url = file_url
-                        self.download_button.visible = True
-                        self.download_button.update()
+            file_bytes = generate_word_doc()
+            file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
 
-            # Si la TVA n'est pas active
+            # En cas d'erreur
+            if error:
+                self.download_button.visible = False
+                self.mask_button.visible = True
+
+            # si pas d'erreur
             else:
-                # Si l'IR est active
-                if ir is True:
-                    # generer le document word
-                    def generate_word_doc():
-                        doc = Document()
-                        # Ajouter une image dans l'en-tête
-                        section = doc.sections[0]
-                        header = section.header
-                        header_paragraph = header.paragraphs[0]
-                        footer = section.footer
-                        footer_paragraph = footer.paragraphs[0]
+                self.download_button.url = file_url
+                self.download_button.visible = True
+                self.mask_button.visible = False
 
-                        # Ajouter l'image dans l'en-tête
-                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                        # Ajouter l'image dans le pied de page
-                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
-
-                        buffer = io.BytesIO()
-                        doc.save(buffer)
-                        buffer.seek(0)
-                        return buffer.getvalue()
-
-                    def upload_to_supabase(file, filename):
-                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
-                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        file_path = f"{time_stamp}_{filename}"
-
-                        # 🔹 Upload vers Supabase Storage
-                        resp = supabase.storage.from_("devis").upload(
-                            file_path,
-                            file,  # Fichier en bytes
-                            file_options={
-                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
-                            # Ajout du MIME type ici
-                        )
-                        # 🔹 Vérification des erreurs
-                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
-                            return None, resp["error"]
-
-                        # 🔹 Générer l'URL publique
-                        url = supabase.storage.from_("devis").get_public_url(file_path)
-                        return url, None
-
-                    file_bytes = generate_word_doc()
-                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
-
-                    if error:
-                        self.download_button.disabled = True
-                    else:
-                        self.download_button.url = file_url
-                        self.download_button.visible = True
-                        self.download_button.update()
-
-                # Si l'IR n'est pos active
-                else:
-                    # generer le document word
-                    def generate_word_doc():
-                        doc = Document()
-                        # Ajouter une image dans l'en-tête
-                        section = doc.sections[0]
-                        header = section.header
-                        header_paragraph = header.paragraphs[0]
-                        footer = section.footer
-                        footer_paragraph = footer.paragraphs[0]
-
-                        # Ajouter l'image dans l'en-tête
-                        header_paragraph.add_run().add_picture("assets/images/header.jpg", width=Inches(6.5))
-                        # Ajouter l'image dans le pied de page
-                        footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Inches(6.5))
-
-                        buffer = io.BytesIO()
-                        doc.save(buffer)
-                        buffer.seek(0)
-                        return buffer.getvalue()
-
-                    def upload_to_supabase(file, filename):
-                        """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
-                        time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        file_path = f"{time_stamp}_{filename}"
-
-                        # 🔹 Upload vers Supabase Storage
-                        resp = supabase.storage.from_("devis").upload(
-                            file_path,
-                            file,  # Fichier en bytes
-                            file_options={
-                                "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
-                            # Ajout du MIME type ici
-                        )
-                        # 🔹 Vérification des erreurs
-                        if isinstance(resp, dict) and "error" in resp and resp["error"]:
-                            return None, resp["error"]
-
-                        # 🔹 Générer l'URL publique
-                        url = supabase.storage.from_("devis").get_public_url(file_path)
-                        return url, None
-
-                    file_bytes = generate_word_doc()
-                    file_url, error = upload_to_supabase(file_bytes, "mon_devis.docx")
-
-                    if error:
-                        self.download_button.disabled = True
-                    else:
-                        self.download_button.url = file_url
-                        self.download_button.visible = True
-                        self.download_button.update()
-
+            self.download_button.update()
+            self.mask_button.update()
 

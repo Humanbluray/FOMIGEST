@@ -207,7 +207,7 @@ def update_devis_details(ref, qte, prix, id_det):
     conn.close()
 
 
-def update_devis(montant, remise, note_bene, delai, point_liv, validite, paiement, numero):
+def update_devis(montant, remise, note_bene, delai, point_liv, validite, paiement, objet, numero):
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute("""UPDATE devis SET 
@@ -217,8 +217,9 @@ def update_devis(montant, remise, note_bene, delai, point_liv, validite, paiemen
         delai = ?,
         point_liv = ?,
         validite = ?,
-        paiement = ?
-        WHERE numero = ?""", (montant, remise, note_bene, delai, point_liv, validite, paiement, numero))
+        paiement = ?,
+        objet = ?
+        WHERE numero = ?""", (montant, remise, note_bene, delai, point_liv, validite, paiement, objet, numero))
     conn.commit()
     conn.close()
 
@@ -528,9 +529,6 @@ def infos_clients(id_client):
     conn.commit()
     conn.close()
     return final
-
-
-print(infos_clients(29))
 
 
 def update_client(nom, ini, cont, nui, rc, mail, comm, id_client):

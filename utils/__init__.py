@@ -117,7 +117,7 @@ class AnyButton(ft.ElevatedButton):
             bgcolor=theme_color,
             height=40, width=my_width, elevation=1,
             style=ft.ButtonStyle(
-                shape=ft.RoundedRectangleBorder(radius=6)
+                shape=ft.RoundedRectangleBorder(radius=12)
             ),
             # scale=ft.transform.Scale(1),
             # animate_scale=ft.animation.Animation(300, ft.AnimationCurve.FAST_OUT_SLOWIN),
