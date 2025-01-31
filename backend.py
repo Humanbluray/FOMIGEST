@@ -89,8 +89,11 @@ def connexion_base():
                     login     TEXT,
                     pass      TEXT,
                     nom       TEXT,
-                    fonction  TEXT,
-                    groupe    TEXT)""")
+                    prenom    TEXT,
+                    email     TEXT,
+                    statut    TEXT,
+                    niveau    TEXT
+                    """)
 
     cur.execute("""CREATE TABLE IF NOT EXISTS bordereau_details (
                     id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1036,11 +1039,12 @@ def check_login(login, passw):
 def all_users():
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""SELECT login, pass from utilisateurs""")
+    cur.execute("""SELECT * from utilisateurs""")
     resultat = cur.fetchall()
     final = [
         {
-            "login": data[0], "pass": data[1], "nom": data[2], "fonction": data[3], "groupe": data[4]
+            "id": data[0], "login": data[1], "pass": data[1], "nom": data[2], "prenom": data[3], "email": data[4],
+            "statut": data[5], "niveau": data[6]
         }
         for data in resultat
     ]

@@ -5,6 +5,7 @@ from pages.welcome.onglets.devis import Devis
 from pages.welcome.onglets.stock import Stock
 from pages.welcome.onglets.factures import Factures
 from pages.welcome.onglets.fournisseurs import Fournisseurs
+from pages.welcome.onglets.users import User
 from pages.landing.landing import user_infos
 
 
@@ -193,6 +194,10 @@ class Menu(ft.Card):
 
         if e.control.name.value == "prestataires".upper():
             self.cp.contenu.content.controls.append(Fournisseurs(self.cp))
+            self.cp.update()
+
+        if e.control.name.value == "utilisateurs".upper():
+            self.cp.contenu.content.controls.append(User(self.cp))
             self.cp.update()
 
 
