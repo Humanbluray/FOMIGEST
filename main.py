@@ -1,14 +1,8 @@
 import flet as ft
 from pages.landing.landing import Landing, user_infos
 from pages.welcome.welcome import Welcome
-from pages.first_connexion.first_connexion import FirstLogin
+from pages.first_login.first_login import FirstLogin
 import os
-
-
-# Définir des constantes pour les routes
-WELCOME_ROUTE = f"/welcome/{user_infos['username']}"
-LANDING_ROUTE = "/"
-FIRST_CONNEXION = "/first_connexion"
 
 
 def main(page: ft.Page):
@@ -24,13 +18,6 @@ def main(page: ft.Page):
         "Poppins Light": "fonts/Poppins-Light.ttf",
     }
     page.theme = ft.Theme(font_family="Poppins-Medium")
-
-    # Dictionnaire pour mapper les routes aux vues
-    route_views = {
-        LANDING_ROUTE: Landing,
-        WELCOME_ROUTE: Welcome,
-        FIRST_CONNEXION: FirstLogin
-    }
 
     # Gérer les changements de route
     def route_change(event: ft.RouteChangeEvent):
@@ -48,6 +35,10 @@ def main(page: ft.Page):
                 page.views.append(Welcome(page))
             else:
                 page.views.append(Landing(page))
+            page.update()
+
+        if page.route == f"/first_login":
+            page.views.append(FirstLogin(page))
             page.update()
 
     page.update()

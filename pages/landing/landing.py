@@ -26,6 +26,7 @@ class Landing(ft.View):
             password=True, can_reveal_password=True
         )
         self.bt_connect = AnyButton(FIRST_COLOR, "check", "Connecter", "white", None,self.connexion)
+        self.bt_first = AnyButton(FIRST_COLOR, "check", "Première connexion", "white", None, self.go_to_first)
 
         # Dialog box
         self.box = ft.AlertDialog(
@@ -50,16 +51,9 @@ class Landing(ft.View):
                 border_radius=16, padding=20, width=230, bgcolor="white",
                 content=ft.Column(
                     controls=[
-                        ft.Text("FOMIGEST".upper(), size=18, font_family="Poppins Bold"),
+                        ft.Image(src="assets/images/logo.jpg", width=100, height=100),
                         ft.Divider(height=1, color="transparent"),
-                        # ft.Column(
-                        #     controls=[
-                        #         ft.Text("ENtrez vos informations".upper(), size=11, font_family="Poppins Medium"),
-                        #         ft.Divider(thickness=1, height=1),
-                        #     ], spacing=0,  horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                        # ),
-                        ft.Divider(height=1, color="transparent"),
-                        self.login, self.passw, self.bt_connect,
+                        self.login, self.passw, self.bt_connect, self.bt_first
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER
                 )
             )
@@ -78,15 +72,25 @@ class Landing(ft.View):
 
     def connexion(self, e):
         if be.check_login(self.login.value, self.passw.value):
-            details = be.search_user_infos(self.login.value)
-            user_infos["username"] = details["nom"]
-            user_infos["userlevel"] = details["niveau"]
-            user_infos["userlogin"] = details["login"]
-            user_infos["status"] = True
-            self.page.go(f"/welcome/{user_infos['username']}")
-            be.add_activity(user_infos["username"], "Connexion")
-            time.sleep(10)
-            user_infos["status"] = False
+
+            if be.search_user_infos(self.login.value)['statut'] == "actif".upper():
+                details = be.search_user_infos(self.login.value)
+                user_infos["username"] = details["nom"]
+                user_infos["userlevel"] = details["niveau"]
+                user_infos["userlogin"] = details["login"]
+                user_infos["status"] = True
+                self.page.go(f"/welcome/{user_infos['username']}")
+                be.add_activity(user_infos["username"], "Connexion")
+                time.sleep(10)
+                user_infos["status"] = False
+
+            else:
+                user_infos["status"] = False
+                self.box.title.value = "Erreur"
+                self.box.content.value = "Compte inactif! contactez votre administrateur !"
+                self.box.open = True
+                self.box.update()
+
         else:
             user_infos["status"] = False
             self.box.title.value = "Erreur"
@@ -94,6 +98,8 @@ class Landing(ft.View):
             self.box.open = True
             self.box.update()
 
+    def go_to_first(self, e):
+        self.page.go("/first_login")
 
 
 

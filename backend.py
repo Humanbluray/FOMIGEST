@@ -1104,10 +1104,35 @@ def all_users():
     return final
 
 
+def add_user(nom, prenom, email, niveau, poste):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO utilisateurs values (?,?,?,?,?,?,?,?)",
+        (cur.lastrowid, "", "", nom, prenom, email, "nouveau".upper(), niveau, poste)
+    )
+    conn.commit()
+    conn.close()
+
+
 def search_user_infos(login):
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute("""SELECT * FROM utilisateurs WHERE login = ?""", (login,))
+    resultat = cur.fetchone()
+    final = {
+            "id": resultat[0], "login": resultat[1], "pass": resultat[2], "nom": resultat[3], "prenom": resultat[4], "email": resultat[5],
+            "statut": resultat[6], "niveau": resultat[7], "poste": resultat[8]
+        }
+    conn.commit()
+    conn.close()
+    return final
+
+
+def search_user_by_mail(email):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute("""SELECT * FROM utilisateurs WHERE email = ?""", (email,))
     resultat = cur.fetchone()
     final = {
             "id": resultat[0], "login": resultat[1], "pass": resultat[2], "nom": resultat[3], "prenom": resultat[4], "email": resultat[5],
