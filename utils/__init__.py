@@ -26,6 +26,15 @@ field_style: dict = dict(
     border_radius=10, border_width=1, cursor_color=SECOND_COLOR, focused_border_width=2,
     capitalization=ft.TextCapitalization.CHARACTERS
 )
+field_mail_style: dict = dict(
+    height=45,
+    focused_border_color=FIRST_COLOR,
+    content_padding=12, cursor_height=24,
+    label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
+    hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
+    text_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
+    border_radius=10, border_width=1, cursor_color=SECOND_COLOR, focused_border_width=2,
+)
 numbers_field_style: dict = dict(
     height=45,
     focused_border_color=FIRST_COLOR,

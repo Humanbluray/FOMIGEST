@@ -131,7 +131,7 @@ class Fournisseurs(ft.Container):
                                             prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
         self.bt_edit = AnyButton(FIRST_COLOR, "edit", "Modifier", "white", 170, self.update_fourn)
         self.edit_window = ft.Card(
-            elevation=20, surface_tint_color="#f0f0f6", width=440, height=500,
+            elevation=20, surface_tint_color="#f0f0f6", width=440, height=550,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0),
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
@@ -183,7 +183,7 @@ class Fournisseurs(ft.Container):
                                            prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
         self.bt_new = AnyButton(FIRST_COLOR, "edit", "Créer", "white", 170, self.create_fourn)
         self.new_window = ft.Card(
-            elevation=20, surface_tint_color="#f0f0f6", width=440, height=500,
+            elevation=20, surface_tint_color="#f0f0f6", width=440, height=550,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0),
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),

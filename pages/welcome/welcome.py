@@ -12,6 +12,7 @@ class Welcome(ft.View):
             route=f"/welcome/{user_infos['username']}",
             bgcolor="#f2f2f2"
         )
+        self.user_infos = user_infos
         self.page = page
         self.menu = Menu(self, page)
         self.barre = ft.Container(

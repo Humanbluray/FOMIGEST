@@ -1209,6 +1209,7 @@ class Devis(ft.Container):
                 objet, remise, mt_lettres, note_bene, delai, point_liv, validite, paiement,
                 self.cp.user_infos['username']
             )
+            be.add_activity(self.cp.user_infos["userlogin"], f"Création du devis {self.new_num.value}")
 
             self.cp.box.title.value = "Validé"
             self.cp.box.content.value = f"Devis N° {self.new_num.value} créé"
@@ -1245,6 +1246,7 @@ class Devis(ft.Container):
             mt, int(self.edit_remise.value), self.edit_notabene.value, self.edit_delai.value, self.edit_point_liv.value,
             int(self.edit_validite.value), int(self.edit_paiement.value), self.edit_objet.value, num_devis
         )
+        be.add_activity(self.cp.user_infos["userlogin"], f"modification du devis {self.edit_num.value}")
 
         # on supprime les details devis précéédents
         be.delete_devis_details(num_devis)
@@ -1357,10 +1359,15 @@ class Devis(ft.Container):
     def open_impression_window(self, e):
         self.impression_window.scale = 1
         self.impression_window.update()
+        self.edit_window.disabled = True
+        self.edit_window.update()
 
     def close_impression_window(self, e):
         self.impression_window.scale = 0
         self.impression_window.update()
+        self.edit_window.disabled = False
+        self.edit_window.update()
+
         self.regime.value = None
         self.tva.value = None
         self.ir.value = None
@@ -1374,7 +1381,7 @@ class Devis(ft.Container):
         ):
             widget.update()
 
-    def imprimer_devis(self, e: ft.FilePickerResultEvent):
+    def imprimer_devis(self, e):
         regime = self.regime.value
         tva = self.tva.value
         ir = self.ir.value
@@ -2000,11 +2007,11 @@ class Devis(ft.Container):
                     pg_banque.paragraph_format.space_after = Pt(1)
 
                     draw_simple_paragraph(
-                        f"Par virement à {ENTITE_BANQUE[banque]}, IBAN {ENTITE_IBAN[banque]}".upper(),
+                        f"Par virement à {ENTITE_BANQUE[banque]}, IBAN: {ENTITE_IBAN[banque]}".upper(),
                         WD_ALIGN_PARAGRAPH.LEFT, 3, 3, 11, False, False
                     )
                     draw_simple_paragraph(
-                        f"Code swift {ENTITE_SWIFT[banque]}, titulaire: FOMIDERC SARL".upper(),
+                        f"Code swift: {ENTITE_SWIFT[banque]}, titulaire: FOMIDERC SARL".upper(),
                         WD_ALIGN_PARAGRAPH.LEFT, 3, 3, 11, False, False
                     )
 

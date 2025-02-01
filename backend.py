@@ -26,7 +26,8 @@ def connexion_base():
                     point_liv       TEXT,
                     validite        INTEGER,
                     paiement        INTEGER,
-                    cree_par        TEXT)""")
+                    cree_par        TEXT,
+                    last_modif      TEXT)""")
 
     # Details devis
     cur.execute("""CREATE TABLE IF NOT EXISTS devis_details (
@@ -86,14 +87,15 @@ def connexion_base():
                     date    DATE)""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS utilisateurs (
+                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
                     login     TEXT,
                     pass      TEXT,
                     nom       TEXT,
                     prenom    TEXT,
                     email     TEXT,
                     statut    TEXT,
-                    niveau    TEXT
-                    """)
+                    niveau    TEXT,
+                    poste     TEXT)""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS bordereau_details (
                     id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -167,8 +169,43 @@ def connexion_base():
                     qte       INTEGER,
                     prix      NUMERIC)""")
 
+    cur.execute("""CREATE TABLE activites (
+                        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user          TEXT,
+                        activity      TEXT,
+                        hour          TEXT)""")
     conn.commit()
     conn.close()
+
+
+def all_activite_by_user(user):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT * FROM activites WHERE user = ?", (user,)
+    )
+    result = cur.fetchall()
+    final = [
+        {
+            "id": data[0], "user": data[1], "activity": data[2], "hour": data[3]
+        }
+        for data in result
+    ]
+    conn.commit()
+    conn.close()
+    return final
+
+
+def add_activity(user, activity,):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO activites values (?,?,?,?)",
+        (cur.lastrowid, user, activity, str(datetime.datetime.now().strftime("%d/%m/%Y - %H:%M:%S")))
+    )
+    conn.commit()
+    conn.close()
+    return
 
 
 # fonctions de la table devis et devis_details ___________________________________________________________
@@ -177,8 +214,9 @@ def add_devis(numero, date, client, montant, objet, remise, montant_lettres, not
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute("""INSERT INTO devis values 
-                    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (cur.lastrowid, numero, date, client, montant, objet, remise, montant_lettres, statut, notabene, delai, point_liv, validite, paiement, username))
+                    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (cur.lastrowid, numero, date, client, montant, objet, remise, montant_lettres, statut, notabene, delai, point_liv, validite, paiement, username,
+                 f"{username} - {str(datetime.datetime.now().strftime("%d/%m/%Y - %H:%M:%S"))}"))
     conn.commit()
     conn.close()
 
@@ -204,7 +242,8 @@ def update_devis_details(ref, qte, prix, id_det):
     cur.execute("""UPDATE devis_details SET 
         reference = ?,
         qte = ?,
-        prix = ?  
+        prix = ?,
+          
         WHERE id = ?""", (ref, qte, prix, id_det))
     conn.commit()
     conn.close()
@@ -651,9 +690,13 @@ def show_info_factures(numero):
         """ SELECT client, date, objet, montant, remise, montant_lettres, bc_client, devis, ov FROM factures WHERE numero = ? """,
         (numero,))
     resultat = cur.fetchone()
+    final = {
+        "client": resultat[0], "date": resultat[1], "objet": resultat[2], "montant": resultat[3],
+        "remise": resultat[4], "bc_client": resultat[6], "devis": resultat[7], "ov": resultat[8]
+    }
     conn.commit()
     conn.close()
-    return resultat
+    return final
 
 
 def all_factures_by_client_id(client_id):
@@ -813,12 +856,15 @@ def factures_details(numero):
     cur.execute("""
         SELECT id, reference, 
         (SELECT designation FROM articles WHERE articles.reference = facture_details.reference) as designation,
-        qte, prix FROM facture_details WHERE numero =?""", (numero,)
+        qte, prix,
+        (SELECT unite FROM articles WHERE articles.reference = facture_details.reference) as unite
+         FROM facture_details WHERE numero =?""", (numero,)
     )
     resultat = cur.fetchall()
     final = [
         {
-            "id": data[0], "reference": data[1], "designation": data[2], "qte": data[3], "prix": data[4]
+            "id": data[0], "reference": data[1], "designation": data[2], "qte": data[3], "prix": data[4],
+            "unite": data[5]
         }
         for data in resultat
     ]
@@ -1027,9 +1073,14 @@ def update_ref_by_name(designation, ref_id):
 def check_login(login, passw):
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""SELECT login, pass from utilisateurs""")
+    cur.execute("""SELECT * from utilisateurs""")
     resultat = cur.fetchall()
-    final = [{"login": data[0], "pass": data[1]} for data in resultat]
+    final = [
+        {
+            "login": data[1], "pass": data[2]
+        }
+        for data in resultat
+    ]
     user = {"login": login, "pass": passw}
     conn.commit()
     conn.close()
@@ -1043,8 +1094,8 @@ def all_users():
     resultat = cur.fetchall()
     final = [
         {
-            "id": data[0], "login": data[1], "pass": data[1], "nom": data[2], "prenom": data[3], "email": data[4],
-            "statut": data[5], "niveau": data[6]
+            "id": data[0], "login": data[1], "pass": data[2], "nom": data[3], "prenom": data[4], "email": data[5],
+            "statut": data[6], "niveau": data[7], "poste": data[8]
         }
         for data in resultat
     ]
@@ -1058,7 +1109,10 @@ def search_user_infos(login):
     cur = conn.cursor()
     cur.execute("""SELECT * FROM utilisateurs WHERE login = ?""", (login,))
     resultat = cur.fetchone()
-    final = {"login": resultat[0], "pass": resultat[1], "nom": resultat[2], "fonction": resultat[3], "groupe": resultat[4]}
+    final = {
+            "id": resultat[0], "login": resultat[1], "pass": resultat[2], "nom": resultat[3], "prenom": resultat[4], "email": resultat[5],
+            "statut": resultat[6], "niveau": resultat[7], "poste": resultat[8]
+        }
     conn.commit()
     conn.close()
     return final
