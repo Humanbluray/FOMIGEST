@@ -12,7 +12,7 @@ FIRST_CONNEXION = "/first_connexion"
 
 
 def main(page: ft.Page):
-    page.title = "FOMIGEST V2.0"
+    page.title = "FOMIDERC Groupe services"
     page.fonts = {
         "Poppins Regular": "fonts/Poppins-Regular.ttf",
         "Poppins Bold": "fonts/Poppins-Bold.ttf",
