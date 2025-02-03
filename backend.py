@@ -163,14 +163,14 @@ def connexion_base():
                     commande  TEXT,
                     date      TEXT )""")
 
-    cur.execute("""CREATE TABLE reception_details (
+    cur.execute("""CREATE TABLE IF NOT EXISTS reception_details  (
                     id        INTEGER PRIMARY KEY AUTOINCREMENT,
                     numero    TEXT,
                     reference TEXT,
                     qte       INTEGER,
                     prix      NUMERIC)""")
 
-    cur.execute("""CREATE TABLE activites (
+    cur.execute("""CREATE TABLE IF NOT EXISTS activites (
                         id            INTEGER PRIMARY KEY AUTOINCREMENT,
                         user          TEXT,
                         activity      TEXT,
