@@ -1205,7 +1205,7 @@ class Devis(ft.Container):
             delai = self.new_delai.value if self.new_delai.value is not None else ""
             point_liv = self.new_point_liv.value if self.new_point_liv.value is not None else ""
             validite = self.new_validite.value if self.new_validite.value is not None else 0
-            paiement = int(self.new_paiement.value) if self.new_paiement.value is not None else 0
+            paiement = self.new_paiement.value if self.new_paiement.value is not None else ""
 
             be.add_devis(
                 self.new_num.value, str(new_date), id_client, int(self.new_montant.value),
