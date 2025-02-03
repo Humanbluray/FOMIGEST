@@ -460,7 +460,6 @@ def is_correct_pasword(password):
     speciales = list(string.punctuation)
 
     letters = list(password)
-    print(letters)
 
     type_nombres = [letter for letter in letters if letter in nombres]
     type_majucules = [letter for letter in letters if letter in majuscules]
@@ -471,5 +470,4 @@ def is_correct_pasword(password):
     else:
         return False
 
-print(is_correct_pasword("Carlos14145"))
 

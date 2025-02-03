@@ -82,6 +82,24 @@ class FicheUser(ft.Container):
         self.cp.results.update()
 
     def open_activity_window(self, e):
+        activities = be.all_activite_by_user(self.infos["login"])
+        self.cp.activity_user.value = self.infos["login"]
+        self.cp.activity_user.update()
+
+        for row in self.cp.table_activity.rows[:]:
+            self.cp.table_activity.rows.remove(row)
+
+        for activity in activities:
+            self.cp.table_activity.rows.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(activity['hour'])),
+                        ft.DataCell(ft.Text(activity['activity'])),
+                    ]
+                )
+            )
+
+        self.cp.table_activity.update()
         self.cp.activity_window.scale = 1
         self.cp.activity_window.update()
 
@@ -315,17 +333,27 @@ class User(ft.Container):
                 )
             )
         )
-
+        self.search_activity = ft.TextField(**search_field_style, width=250, prefix_icon="search", on_change=self.filter_activity)
+        self.activity_user = ft.TextField(
+            **readonly_date_style, width=250, prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED,
+        )
+        self.table_activity = ft.DataTable(
+            **datatable_style,
+            columns=[
+                ft.DataColumn(ft.Text("date".upper())),
+                ft.DataColumn(ft.Text("Actvité".upper()))
+            ]
+        )
         # actvite
         self.activity_window = ft.Card(
             elevation=20, surface_tint_color="#f0f0f6", width=700, height=580,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
-            scale=ft.transform.Scale(0),
+            scale=ft.transform.Scale(0), expand=True,
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
             content=ft.Container(
-                padding=10, bgcolor="#f0f0f6", border_radius=16,
+                padding=10, bgcolor="#f0f0f6", border_radius=16, expand=True,
                 content=ft.Container(
-                    padding=10, bgcolor="white", border_radius=16,
+                    padding=10, bgcolor="white", border_radius=16, expand=True,
                     content=ft.Column(
                         controls=[
                             ft.Container(
@@ -340,15 +368,24 @@ class User(ft.Container):
                                             ]
                                         ),
                                         ft.IconButton("close", FIRST_COLOR, scale=0.6, bgcolor="#f2f2f2",
-                                                      on_click=self.close_new_window)
+                                                      on_click=self.close_activity_window)
                                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
                                 )
                             ),
                             ft.Container(
-                                bgcolor="white", padding=20, border_radius=16,
+                                bgcolor="white", padding=10, border_radius=16, expand=True,
                                 content=ft.Column(
                                     controls=[
-
+                                        ft.Row(
+                                            controls=[self.search_activity, self.activity_user],
+                                            alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                                        ),
+                                        ft.Column(
+                                            expand=True, scroll=ft.ScrollMode.AUTO,
+                                            controls=[
+                                                self.table_activity
+                                            ]
+                                        )
                                     ]
                                 )
                             )
@@ -406,6 +443,10 @@ class User(ft.Container):
     def close_edit_window(self, e):
         self.edit_window.scale = 0
         self.edit_window.update()
+
+    def close_activity_window(self, e):
+        self.activity_window.scale = 0
+        self.activity_window.update()
 
     def create_user(self, e):
         count = 0
@@ -486,3 +527,22 @@ class User(ft.Container):
             self.edit_window.scale = 0
             self.edit_window.update()
 
+    def filter_activity(self, e):
+        search = self.search_activity.value if self.search_activity.value.lower() is not None else ""
+        activities = be.all_activite_by_user(self.activity_user.value)
+        filtered_datas = list(filter(lambda x: search in x["activity"], activities))
+
+        for row in self.table_activity.rows[:]:
+            self.table_activity.rows.remove(row)
+
+        for activity in filtered_datas:
+            self.table_activity.rows.append(
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(ft.Text(activity['hour'])),
+                        ft.DataCell(ft.Text(activity['activity'])),
+                    ]
+                )
+            )
+
+        self.table_activity.update()

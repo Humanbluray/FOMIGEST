@@ -14,11 +14,17 @@ import os
 import io
 from dotenv import load_dotenv
 from supabase import create_client
+import requests
 
 load_dotenv()
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 supabase = create_client(url, key)
+
+BUCKET_FACTURE = "factures"
+BUCKET_BORDEREAU = "bordereaux"
+FOOTER_URl = "https://byggqnusosovxulbchup.supabase.co/storage/v1/object/public/logos//footer.png"
+HEARDER_URL = "https://byggqnusosovxulbchup.supabase.co/storage/v1/object/public/logos//header.png"
 
 
 class OneArticle(ft.Container):
@@ -189,6 +195,10 @@ class Factures(ft.Container):
                 alignment=ft.MainAxisAlignment.CENTER
             )
         )
+        self.bt_print_bordereau = AnyButton(FIRST_COLOR, "", "Imprimer bordereau", "white", 230,
+                                          self.imprimer_bordereau)
+        self.mask_bordereau = AnyButton(SECOND_COLOR, "", "télécharger bordereau", "white", 230, None)
+        self.mask_bordereau.visible = False
         self.bt_print_options = AnyButton(FIRST_COLOR, "print_outlined", "Imprimer facture", "white", 230, self.open_impression_window)
         self.edit_window = ft.Card(
             elevation=20, surface_tint_color="#f0f0f6", width=900, height=650,
@@ -274,7 +284,7 @@ class Factures(ft.Container):
                                     ),
 
                                     ft.Row([self.edit_montant, self.edit_lettres]),
-                                    ft.Row([self.bt_print_options], spacing=20)
+                                    ft.Row([self.bt_print_options, self.bt_print_bordereau, self.mask_bordereau], spacing=20)
                                 ]
                             )
                         )
@@ -607,6 +617,7 @@ class Factures(ft.Container):
             be.add_reglement(
                 self.pay_facture.value, int(self.pay_a_regler.value), self.pay_mode.value, self.pay_selected_date.value
             )
+            be.add_activity(self.cp.user_infos["userlogin"], f"Paiement de la facture {self.pay_facture.value}".upper())
             self.cp.box.title.value = "Confirmé"
             self.cp.box.content.value = "Paiement sauvegardé"
             self.cp.box.open = True
@@ -693,6 +704,12 @@ class Factures(ft.Container):
     def close_edit_window(self, e):
         self.edit_window.scale = 0
         self.edit_window.update()
+
+        self.mask_bordereau.visible = False
+        self.mask_bordereau.url = None
+        self.bt_print_bordereau.visible = True
+        self.mask_bordereau.update()
+        self.bt_print_bordereau.update()
         self.main_window.disabled = False
         self.main_window.opacity = 1
         self.main_window.update()
@@ -809,9 +826,14 @@ class Factures(ft.Container):
                     footer_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
                     # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.png", width=Cm(18))
+                    response = requests.get(HEARDER_URL)
+                    stream_header = io.BytesIO(response.content)
+                    header_paragraph.add_run().add_picture(stream_header, width=Cm(18))
+
                     # Ajouter l'image dans le pied de page
-                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Cm(18))
+                    response = requests.get(FOOTER_URl)
+                    stream_footer = io.BytesIO(response.content)
+                    footer_paragraph.add_run().add_picture(stream_footer, width=Cm(18))
 
                 header_and_footer()
 
@@ -1420,7 +1442,7 @@ class Factures(ft.Container):
                 file_path = f"{time_stamp}_{filename}"
 
                 # Upload vers Supabase Storage
-                resp = supabase.storage.from_("devis").upload(
+                resp = supabase.storage.from_(BUCKET_FACTURE).upload(
                     file_path,
                     file,  # Fichier en bytes
                     file_options={
@@ -1432,7 +1454,7 @@ class Factures(ft.Container):
                     return None, resp["error"]
 
                 # 🔹 Générer l'URL publique
-                url = supabase.storage.from_("devis").get_public_url(file_path)
+                url = supabase.storage.from_(BUCKET_FACTURE).get_public_url(file_path)
                 return url, None
 
             file_bytes = generate_word_doc()
@@ -1451,3 +1473,687 @@ class Factures(ft.Container):
 
             self.download_button.update()
             self.mask_button.update()
+
+    def imprimer_bordereau(self, e):
+        regime = self.regime.value
+        tva = self.tva.value
+        ir = self.ir.value
+        banque = self.banque.value
+
+        # Si la TVA est Active
+        if tva and regime == "S":
+            # Erreur
+            self.cp.box.title.value = "Erreur"
+            self.cp.box.content.value = "Pas de TVA dans le régime simplifié"
+            self.cp.box.open = True
+            self.cp.box.update()
+
+        # Pour tout autre cas
+        else:
+            # generer le document word
+            total_prix = 0
+            def generate_word_doc():
+                doc = Document()
+
+                # Ajouter une image dans l'en-tête
+                def header_and_footer():
+                    section = doc.sections[0]
+
+                    section.left_margin = Cm(1.5)  # Marge gauche
+                    section.right_margin = Cm(1.5)  # Marge droite
+                    section.top_margin = Cm(0.5)  # Marge haute
+                    section.bottom_margin = Cm(0.5)  # Marge basse
+
+                    header = section.header
+                    header_paragraph = header.paragraphs[0]
+                    footer = section.footer
+                    footer_paragraph = footer.paragraphs[0]
+
+                    header_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                    footer_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+
+                    # Ajouter l'image dans l'en-tête
+                    response = requests.get(HEARDER_URL)
+                    stream_header = io.BytesIO(response.content)
+                    header_paragraph.add_run().add_picture(stream_header, width=Cm(18))
+
+                    # Ajouter l'image dans le pied de page
+                    response = requests.get(FOOTER_URl)
+                    stream_footer = io.BytesIO(response.content)
+                    footer_paragraph.add_run().add_picture(stream_footer, width=Cm(18))
+
+                header_and_footer()
+
+                # Créer un tableau principal avec une seule ligne et deux colonnes pour entete client
+                main_table = doc.add_table(rows=1, cols=2)
+
+                # Entête infos facture
+                def entete_facture():
+                    # Ajouter un tableau dans la première cellule
+                    cell1 = main_table.cell(0, 0)
+                    num_facture = self.edit_num.value
+                    num_bordereau = be.search_bordereau_by_facture(num_facture)['numero']
+                    bc_client = be.show_info_factures(num_facture)["bc_client"]
+                    ov = be.show_info_factures(num_facture)['ov']
+
+                    table1 = cell1.add_table(rows=4, cols=1)  # Tableau avec 4 lignes et 1 colonne
+                    cell1_1 = table1.cell(0, 0)
+                    paragraph1 = cell1_1.paragraphs[0]
+                    run1 = paragraph1.add_run("BORDEREAU DE LIVRAISON")
+                    paragraph1.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    run1.font.name = "Arial Black"
+                    run1.font.size = Pt(14)
+                    run1.font.color.rgb = RGBColor(200, 0, 0)
+                    cell1_1.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(20)  # Espacement entre les lignes réduit
+
+                    cell1_2 = table1.cell(1, 0)
+                    paragraph2 = cell1_2.paragraphs[0]
+                    run2 = paragraph2.add_run(f"BL N° {num_bordereau}")
+                    paragraph2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    run2.font.name = "calibri"
+                    run2.font.size = Pt(11)
+                    cell1_2.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_2.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_2.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
+
+                    cell1_3 = table1.cell(2, 0)
+                    paragraph3 = cell1_3.paragraphs[0]
+                    run3 = paragraph3.add_run(f"N° Proforma {self.edit_dev.value}")
+                    paragraph3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    run3.font.name = "calibri"
+                    run3.font.size = Pt(11)
+                    cell1_3.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_3.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_3.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
+
+                    cell1_4 = table1.cell(3, 0)
+                    paragraph4 = cell1_4.paragraphs[0]
+                    run4 = paragraph4.add_run(f"Suivant BC° {bc_client}")
+                    paragraph4.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    run4.font.name = "calibri"
+                    run4.font.size = Pt(11)
+                    cell1_4.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_4.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_4.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
+
+                entete_facture()
+
+                # Entete infos client
+                def entete_infos_client():
+                    # Ajouter un tableau dans la première cellule
+                    cell1 = main_table.cell(0, 1)
+                    client_id = be.show_info_devis(self.edit_dev.value)["client"]
+                    client = be.infos_clients(client_id)["nom"]
+                    contact = be.infos_clients(client_id)["contact"]
+                    nui = be.infos_clients(client_id)["NUI"]
+                    rc = be.infos_clients(client_id)["RC"]
+
+                    table1 = cell1.add_table(rows=4, cols=1)  # Tableau avec 4 lignes et 1 colonne
+                    cell1_1 = table1.cell(0, 0)
+                    paragraph1 = cell1_1.paragraphs[0]
+                    run1 = paragraph1.add_run(f"Client:   {client}")
+                    paragraph1.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    run1.font.name = "calibri"
+                    run1.font.size = Pt(11)
+                    cell1_1.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_1.paragraphs[0].paragraph_format.line_spacing = Pt(15)  # Espacement entre les lignes réduit
+
+                    cell1_2 = table1.cell(1, 0)
+                    paragraph2 = cell1_2.paragraphs[0]
+                    run2 = paragraph2.add_run(f"Contact:   {contact}")
+                    paragraph2.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    run2.font.name = "calibri"
+                    run2.font.size = Pt(11)
+                    cell1_2.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_2.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_2.paragraphs[0].paragraph_format.line_spacing = Pt(15)
+
+                    cell1_3 = table1.cell(2, 0)
+                    paragraph3 = cell1_3.paragraphs[0]
+                    run3 = paragraph3.add_run(f"NUI:   {nui}")
+                    paragraph3.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    run3.font.name = "calibri"
+                    run3.font.size = Pt(11)
+                    cell1_3.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_3.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_3.paragraphs[0].paragraph_format.line_spacing = Pt(15)
+
+                    cell1_4 = table1.cell(3, 0)
+                    paragraph4 = cell1_4.paragraphs[0]
+                    run4 = paragraph4.add_run(f"RC:   {rc}")
+                    paragraph4.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    run4.font.name = "calibri"
+                    run4.font.size = Pt(12)
+                    cell1_4.paragraphs[0].paragraph_format.space_before = 10  # Pas d'espace avant le paragraphe
+                    cell1_4.paragraphs[0].paragraph_format.space_after = 10  # Pas d'espace après le paragraphe
+                    cell1_4.paragraphs[0].paragraph_format.line_spacing = Pt(15)
+
+                entete_infos_client()
+
+                # Fonction d'ajout ligne
+                def ajouter_ligne_grise(paragraph):
+                    p = paragraph._element  # Récupérer l'élément XML du paragraphe
+                    pPr = p.find("w:pPr", paragraph._element.nsmap)  # Chercher les propriétés du paragraphe
+
+                    if pPr is None:
+                        pPr = OxmlElement("w:pPr")
+                        p.insert(0, pPr)
+
+                    pbdr = OxmlElement("w:pBdr")  # Élément pour les bordures
+
+                    # Définir la bordure inférieure (ligne grise)
+                    bottom_border = OxmlElement("w:bottom")
+                    bottom_border.set("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val",
+                                      "single")  # Type de ligne (simple)
+                    bottom_border.set("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}sz",
+                                      "6")  # Épaisseur de la ligne (6 = 0.5 pt)
+                    bottom_border.set("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}space",
+                                      "1")  # Espacement avec le texte
+                    bottom_border.set("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}color",
+                                      "808080")  # Couleur grise en hexadécimal
+
+                    pbdr.append(bottom_border)  # Ajouter la bordure aux propriétés du paragraphe
+                    pPr.append(pbdr)  # Appliquer la bordure au paragraphe
+
+                # Fonction d'écriture
+                def draw_simple_paragraph(text: str, alignment, before: int, after: int, font_size: int, is_italic: bool, is_bold: bool):
+                    details_pg = doc.add_paragraph()
+                    details_pg.alignment = alignment
+                    details_pg_format = details_pg.paragraph_format
+                    details_pg_format.space_before = Pt(before)  # Espace avant le paragraphe
+                    details_pg_format.space_after = Pt(after)
+                    details_pg_format.line_spacing = 1
+                    run_details_header = details_pg.add_run(text)  # Run 1 Separation
+                    run_details_header.font.name = "calibri"
+                    run_details_header.font.size = Pt(font_size)
+                    run_details_header.italic = is_italic
+                    run_details_header.bold = is_bold
+
+                # Objet
+                objet = be.show_info_factures(self.edit_num.value)['objet']
+
+                if objet == "" or objet is None:
+                    pass
+                else:
+                    draw_simple_paragraph(
+                        f"Objet: {objet}", WD_PARAGRAPH_ALIGNMENT.LEFT,
+                        10, 10, 11, False, False
+                    )
+
+                # References
+                def draw_details_devis():
+                    details = be.factures_details(self.edit_num.value)
+                    longueur = len(details) + 1
+
+                    # Créer un tableau avec 3 lignes et 6 colonnes
+                    table = doc.add_table(rows=longueur, cols=6)
+
+                    # Appliquer des bordures au tableau entier
+                    # Ajouter des bordures noires à chaque cellule
+                    def set_cell_border(cell):
+                        """ Ajoute une bordure noire autour d'une cellule """
+                        tc_pr = cell._element.get_or_add_tcPr()
+                        borders = OxmlElement('w:tcBorders')
+
+                        for border_name in ['top', 'left', 'bottom', 'right']:
+                            border = OxmlElement(f'w:{border_name}')
+                            border.set(qn('w:val'), 'single')  # Bordure simple
+                            border.set(qn('w:sz'),
+                                       '8')  # Taille de la bordure (plus épais pour meilleure visibilité)
+                            border.set(qn('w:space'), '0')
+                            border.set(qn('w:color'), '000000')  # Noir
+                            borders.append(border)
+
+                        tc_pr.append(borders)
+
+                    # Appliquer les bordures à toutes les cellules
+                    for row in table.rows:
+                        for cell in row.cells:
+                            set_cell_border(cell)
+
+                    # Définir la largeur spécifique des colonnes (en centimètres)
+                    column_widths = [Cm(1), Cm(12), Cm(1.5), Cm(1), Cm(2), Cm(2.5)]  # Largeurs des colonnes
+
+                    # Appliquer les largeurs de colonnes
+                    for col_idx, width in enumerate(column_widths):
+                        for row in table.rows:
+                            row.cells[col_idx].width = width  # Définir la largeur de la cellule
+
+                    # Ajouter les en-têtes (ligne 0)
+                    hdr_cells = table.rows[0].cells
+                    headers = ["item", "Désignation", "Qté", "U", "Prix", "total (CFA)"]
+                    for i, hdr in enumerate(headers):
+                        paragraph = hdr_cells[i].paragraphs[0]
+                        run = paragraph.add_run(hdr)
+                        run.bold = True
+                        run.font.name = "Calibri"
+                        run.font.size = Pt(10)
+
+                        # Centrer horizontalement
+                        paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+                        # Centrer verticalement
+
+                    # Ajouter des données dans les 2 autres lignes (lignes 1 et 2) avec des nombres aléatoires
+                    for i, row in enumerate(table.rows[1:]):  # i commence à 0 pour la première ligne de données
+                        # Indice de la ligne (Ligne 1, Ligne 2, etc.)
+                        details = be.factures_details(self.edit_num.value)
+                        values = [f"{i}", str(details[i]["designation"]), str(details[i]["qte"]),
+                                  str(details[i]["unite"]), str(ajout_separateur(details[i]["prix"])),
+                                  str(ajout_separateur(details[i]["prix"]*details[i]["qte"]))
+                        ]
+
+                        for j, cell in enumerate(row.cells):
+                            paragraph = cell.paragraphs[0]
+                            run = paragraph.add_run(values[j])
+                            run.font.name = "Calibri"
+                            run.font.size = Pt(10)
+                            paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER  # Centrer le texte
+                            cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
+
+                draw_details_devis()
+
+                # Montant total
+                mt_total = 0
+                details = be.factures_details(self.edit_num.value)
+                for row in details:
+                    mt_total += row["qte"]*row["prix"]
+
+                def draw_montants():
+                    # Ecrire le montant
+                    draw_simple_paragraph(
+                        f"Total:    {ajout_separateur(mt_total)}", WD_PARAGRAPH_ALIGNMENT.RIGHT, 10, 1,
+                        11, False, False
+                    )
+
+                    # 1er cas TVA active et IR actif
+                    if tva and ir:
+                        # si la remise est nulle
+                        if int(self.edit_remise.value) == 0:
+                            mt_taxe = int(mt_total * TVA_VALUE)
+                            mt_ttc = mt_total - mt_taxe
+                            mt_ir = int(mt_total * IR_VALUE[regime])
+                            mt_nap = mt_ttc - mt_ir
+
+                            draw_simple_paragraph(
+                                f"TVA:    {ajout_separateur(mt_taxe)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant TTC:    {ajout_separateur(mt_ttc)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"IR:    {ajout_separateur(mt_ir)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"NAP:    {ajout_separateur(mt_nap)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                        # Si la remise est non nulle
+                        else:
+                            rem = int(mt_total * int(self.edit_remise.value)/100)
+                            mt_remise = mt_total - rem
+                            mt_taxe = int(mt_remise * TVA_VALUE)
+                            mt_ttc = mt_remise - mt_taxe
+                            mt_ir = int(mt_total * IR_VALUE[regime])
+                            mt_nap = mt_ttc - mt_ir
+
+                            draw_simple_paragraph(
+                                f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant remisé:    {ajout_separateur(mt_remise)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"TVA:    {ajout_separateur(mt_taxe)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant TTC:    {ajout_separateur(mt_ttc)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"IR:    {ajout_separateur(mt_ir)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"NAP:    {ajout_separateur(mt_nap)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                    # 2e cas: TVA inactive et IR actif
+                    elif not tva and ir:
+
+                        # si la remise est nulle
+                        if int(self.edit_remise.value) == 0:
+                            mt_ir = int(mt_total*IR_VALUE[regime])
+                            mt_nap = int(mt_total - mt_ir)
+                            draw_simple_paragraph(
+                                f"IR:    {ajout_separateur(mt_ir)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"NAP:    {ajout_separateur(mt_nap)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                        # Si la remise est non nulle
+                        else:
+                            mt_remise = be.show_info_devis(self.edit_num.value)['montant']
+                            mt_ir = int(mt_remise * IR_VALUE[regime])
+                            mt_nap = mt_remise - mt_ir
+                            draw_simple_paragraph(
+                                f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant Remisé:    {ajout_separateur(mt_remise)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"IR:    {ajout_separateur(mt_ir)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"NAP:    {ajout_separateur(mt_nap)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_nap)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                    # 3e Cas: TVA actif IR inactif
+                    elif tva and not ir:
+                        # si la remise est nulle
+                        if int(self.edit_remise.value) == 0:
+                            mt_taxe = int(mt_total * TVA_VALUE)
+                            mt_ttc = mt_total - mt_taxe
+
+                            draw_simple_paragraph(
+                                f"TVA:    {ajout_separateur(mt_taxe)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant TTC:    {ajout_separateur(mt_ttc)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_ttc)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                        # Si la remise est non nulle
+                        else:
+                            rem = int(mt_total * int(self.edit_remise.value) / 100)
+                            mt_remise = mt_total - rem
+                            mt_taxe = int(mt_remise * TVA_VALUE)
+                            mt_ttc = mt_remise - mt_taxe
+
+                            draw_simple_paragraph(
+                                f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant remisé:    {ajout_separateur(mt_remise)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"TVA:    {ajout_separateur(mt_taxe)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant TTC:    {ajout_separateur(mt_ttc)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_ttc)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                    # 4e cas TVA et IR inactifs
+                    else:
+                        # si la remise est nulle
+                        if int(self.edit_remise.value) == 0:
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_total)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                        # Si la remise est non nulle
+                        else:
+                            rem = int(mt_total * int(self.edit_remise.value) / 100)
+                            mt_remise = mt_total - rem
+
+                            draw_simple_paragraph(
+                                f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Montant remisé:    {ajout_separateur(mt_remise)}",
+                                WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
+                                11, False, False
+                            )
+                            draw_simple_paragraph(
+                                f"Facture Proforma arrêtée à la somme de:", WD_PARAGRAPH_ALIGNMENT.CENTER, 10, 1,
+                                10, True, False
+                            )
+                            draw_simple_paragraph(
+                                f"{ecrire_en_lettres(mt_remise)}".upper(), WD_PARAGRAPH_ALIGNMENT.CENTER, 1, 20,
+                                11, False, True
+                            )
+
+                # draw_montants()
+
+                # # NB
+                # if be.show_info_devis(self.edit_dev.value)["note_bene"] == "" or \
+                #         be.show_info_devis(self.edit_dev.value)["note_bene"] is None:
+                #     pass
+                #
+                # else:
+                #     draw_simple_paragraph(
+                #         f"NB".upper(), WD_PARAGRAPH_ALIGNMENT.LEFT, 1, 3,
+                #         11, False, True
+                #     )
+                #     observations = be.show_info_devis(self.edit_num.value)["note_bene"].split(";")
+                #     if ";" in observations:
+                #         print(observations)
+                #         draw_simple_paragraph(
+                #             f"{observations}", WD_PARAGRAPH_ALIGNMENT.LEFT, 3, 3,
+                #             11, False, False
+                #         )
+                #     else:
+                #         divisions = be.show_info_devis(self.edit_num.value)["note_bene"].split(";")
+                #         for observ in divisions:
+                #             print(observ)
+                #             draw_simple_paragraph(
+                #                 f"{observ}", WD_PARAGRAPH_ALIGNMENT.LEFT, 3, 3,
+                #                 11, False, False
+                #             )
+                #
+                # pgf5 = doc.add_paragraph()
+                # ajouter_ligne_grise(pgf5)
+                # pgf5.paragraph_format.space_before = Pt(0)
+                # pgf5.paragraph_format.space_after = Pt(0)
+
+                # Infos (delai lirvaison, point de livraison, paeiment, validité)
+                def draw_other_infos():
+                    pg1 = doc.add_paragraph()
+                    # Délai de livraison
+                    run1 = pg1.add_run("délai de livraison : ".upper())
+                    run1.font.name = "calibri"
+                    run1.font.size = Pt(10)
+                    run1.font.color.rgb = RGBColor(175, 175, 175)
+                    run2 = pg1.add_run(f"{be.show_info_devis(self.edit_dev.value)["delai"]}".upper())
+                    run2.font.name = "calibri"
+                    run2.font.size = Pt(10)
+                    run2.font.color.rgb = RGBColor(0, 0, 0)
+
+                    # point de livraison
+                    run3 = pg1.add_run("                                 Point de livraison : ".upper())
+                    run3.font.name = "calibri"
+                    run3.font.size = Pt(10)
+                    run3.font.color.rgb = RGBColor(175, 175, 175)
+                    run4 = pg1.add_run(f"{be.show_info_devis(self.edit_dev.value)["point_liv"]}".upper())
+                    run4.font.name = "calibri"
+                    run4.font.size = Pt(10)
+                    run4.font.color.rgb = RGBColor(0, 0, 0)
+                    pg1.paragraph_format.space_before = Pt(1)
+                    pg1.paragraph_format.space_after = Pt(3)
+
+                    pg2 = doc.add_paragraph()
+                    # Paiement
+                    run5 = pg2.add_run("paiement : ".upper())
+                    run5.font.name = "calibri"
+                    run5.font.size = Pt(10)
+                    run5.font.color.rgb = RGBColor(175, 175, 175)
+                    run6 = pg2.add_run(f"{be.show_info_devis(self.edit_num.value)["paiement"]} Jours après dépôt de facture".upper())
+                    run6.font.name = "calibri"
+                    run6.font.size = Pt(10)
+                    run6.font.color.rgb = RGBColor(0, 0, 0)
+                    # Paiement
+                    run7 = pg2.add_run("                    Validité de l'offre : ".upper())
+                    run7.font.name = "calibri"
+                    run7.font.size = Pt(10)
+                    run7.font.color.rgb = RGBColor(175, 175, 175)
+                    run8 = pg2.add_run(f"{be.show_info_devis(self.edit_num.value)["validite"]} mois".upper())
+                    run8.font.name = "calibri"
+                    run8.font.size = Pt(10)
+                    run8.font.color.rgb = RGBColor(0, 0, 0)
+                    pg1.paragraph_format.space_before = Pt(0)
+                    pg2.paragraph_format.space_after = Pt(0)
+                    ajouter_ligne_grise(pg2)
+
+                # draw_other_infos()
+
+                def draw_banque():
+                    pg_banque = doc.add_paragraph()
+                    run1 = pg_banque.add_run("Information bancaires : ".upper())
+                    run1.font.name = "calibri"
+                    run1.font.size = Pt(10)
+                    run1.font.italic = True
+                    run1.font.color.rgb = RGBColor(175, 175, 175)
+                    pg_banque.paragraph_format.space_after = Pt(1)
+
+                    draw_simple_paragraph(
+                        f"Par virement à {ENTITE_BANQUE[banque]}, IBAN: {ENTITE_IBAN[banque]}".upper(),
+                        WD_ALIGN_PARAGRAPH.LEFT, 3, 3, 11, False, False
+                    )
+                    draw_simple_paragraph(
+                        f"Code swift: {ENTITE_SWIFT[banque]}, titulaire: FOMIDERC SARL".upper(),
+                        WD_ALIGN_PARAGRAPH.LEFT, 3, 3, 11, False, False
+                    )
+
+                # draw_banque()
+
+
+                # Enregistrement du fichier
+                buffer = io.BytesIO()
+                doc.save(buffer)
+                buffer.seek(0)
+                return buffer.getvalue()
+
+            # Enregistre sur le bucket supabase
+            def upload_to_supabase(file, filename):
+                """Upload un fichier sur Supabase et retourne le lien de téléchargement"""
+                time_stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                file_path = f"{time_stamp}_{filename}"
+
+                # Upload vers Supabase Storage
+                resp = supabase.storage.from_(BUCKET_BORDEREAU).upload(
+                    file_path,
+                    file,  # Fichier en bytes
+                    file_options={
+                        "content-type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
+                    # Ajout du MIME type ici
+                )
+                # 🔹 Vérification des erreurs
+                if isinstance(resp, dict) and "error" in resp and resp["error"]:
+                    return None, resp["error"]
+
+                # 🔹 Générer l'URL publique
+                url = supabase.storage.from_(BUCKET_BORDEREAU).get_public_url(file_path)
+                return url, None
+
+            file_bytes = generate_word_doc()
+            file_url, error = upload_to_supabase(file_bytes, "mon_bordereau.docx")
+
+            # En cas d'erreur
+            if error:
+                self.bt_print_bordereau.visible = True
+                self.mask_bordereau.visible = False
+
+            # si pas d'erreur
+            else:
+                self.mask_bordereau.url = file_url
+                self.mask_bordereau.visible = True
+                self.bt_print_bordereau.visible = False
+
+            self.bt_print_bordereau.update()
+            self.mask_bordereau.update()

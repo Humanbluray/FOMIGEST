@@ -107,8 +107,9 @@ def connexion_base():
     cur.execute("""CREATE TABLE IF NOT EXISTS bordereau (
                     id         INTEGER PRIMARY KEY AUTOINCREMENT,
                     numero     TEXT,
-                    devis      TEXT,
-                    bc_client  TEXT)""")
+                    facture    TEXT,
+                    bc_client  TEXT,
+                    date       TEXT)""")
 
     cur.execute("""CREATE TABLE IF NOT EXISTS historique (
                     id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -182,7 +183,7 @@ def all_activite_by_user(user):
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute(
-        "SELECT * FROM activites WHERE user = ?", (user,)
+        "SELECT * FROM activites WHERE user = ? ORDER by id DESC", (user,)
     )
     result = cur.fetchall()
     final = [
@@ -205,7 +206,30 @@ def add_activity(user, activity,):
     )
     conn.commit()
     conn.close()
-    return
+
+
+def add_achat(numero, ref, des, qte, prix, commentaire):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO achats values (?,?,?,?,?,?,?,?)",
+        (cur.lastrowid, numero, ref, des, qte, prix, commentaire, str(datetime.datetime.now().strftime("%d/%m/%Y")))
+    )
+    conn.commit()
+    conn.close()
+
+
+def find_numero_acaht():
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT count(id) FROM achats"
+    )
+    result = cur.fetchone()
+
+    conn.commit()
+    conn.close()
+    return f"FMD/AD/{result[0] + 1}"
 
 
 # fonctions de la table devis et devis_details ___________________________________________________________
@@ -1069,6 +1093,15 @@ def update_ref_by_name(designation, ref_id):
     conn.close()
 
 
+def update_prix_by_ref(prix, ref):
+    """ update reference and prix by id ref"""
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute("UPDATE articles SET prix = ? WHERE reference = ?", (prix, ref))
+    conn.commit()
+    conn.close()
+
+
 # tables utilisateurs
 def check_login(login, passw):
     conn = sql.connect(my_base)
@@ -1227,7 +1260,7 @@ def find_user_password(login):
 def add_bordereau(numero, devis, bc_client):
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""INSERT INTO bordereau values (?,?,?,?)""", (cur.lastrowid, numero, devis, bc_client))
+    cur.execute("""INSERT INTO bordereau values (?,?,?,?,?)""", (cur.lastrowid, numero, devis, bc_client, str(datetime.date.today())))
     conn.commit()
     conn.close()
 
@@ -1255,33 +1288,42 @@ def all_bordereaux():
     return r_final
 
 
-def find_bordereau_num(client):
+def find_bordereau_num(id_client):
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""SELECT id FROM bordereau ORDER BY id DESC""")
-    resultat = cur.fetchone()
-    if resultat is None:
-        r_final = INITIALES + "/BL/" + str(client) + "001"
+    cur.execute("""SELECT * FROM bordereau ORDER BY id DESC""")
+    resultat = cur.fetchall()
+    this_year = f"{datetime.date.today().year}"
+    final = [row for row in resultat if str(row[2])[0:4] == this_year]
+    bor_num = len(final)
+    ini_cli = search_initiales(id_client)
+
+    if bor_num is None or bor_num == 0:
+        r_final = ini_cli + "001/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
     else:
-        if resultat[0] < 10:
-            r_final = INITIALES + "/BL/" + str(client) + "00" + str(resultat[0])
-        elif 10 < resultat[0] < 100:
-            r_final = INITIALES + "/BL/" + str(client) + "0" + str(resultat[0])
+        if int(bor_num) < 10:
+            r_final = ini_cli + "00" + str(bor_num + 1) + "/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
+
+        elif 10 < int(bor_num) < 100:
+            r_final = ini_cli + "0" + str(bor_num + 1) + "/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
+
         else:
-            r_final = INITIALES + "/BL/" + str(client) + str(resultat[0])
+            r_final = ini_cli + str(bor_num + 1) + "/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
+
     conn.commit()
     conn.close()
     return r_final
 
 
-def search_bordereau(devis):
+def search_bordereau_by_facture(facture):
     conn = sql.connect(my_base)
     cur = conn.cursor()
-    cur.execute("""SELECT * FROM bordereau WHERE devis = ?""", (devis,))
+    cur.execute("""SELECT * FROM bordereau WHERE facture = ?""", (facture,))
     resultat = cur.fetchone()
+    final = {"id": resultat[0], "numero": resultat[1], "facture": resultat[2], "bc_client": resultat[3]}
     conn.commit()
     conn.close()
-    return resultat
+    return final
 
 
 def verif_bordereau(devis):
@@ -1296,11 +1338,10 @@ def verif_bordereau(devis):
 
 # table historique
 def add_historique(ref, typp, num, qte_av, qte, qte_ap):
-    global today
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute("""INSERT INTO historique values (?,?,?,?,?,?,?,?)""",
-                (cur.lastrowid, ref, today, typp, num, qte_av, qte, qte_ap))
+                (cur.lastrowid, ref, str(datetime.datetime.now().strftime("%d/%m/%Y")), typp, num, qte_av, qte, qte_ap))
     conn.commit()
     conn.close()
 
@@ -1362,14 +1403,6 @@ def nb_achats():
 def generate_achat_num():
     nb = nb_achats()
     return f"FMD/AD/{int(nb) + 1}"
-
-
-def add_achat(numero, ref, des, qte, prix, comm):
-    con = sql.connect(my_base)
-    cur = con.cursor()
-    cur.execute("""INSERT INTO achats values (?,?,?,?,?,?,?,?)""", (cur.lastrowid, numero, ref, des, qte, prix, comm, today))
-    con.commit()
-    con.close()
 
 
 def maj_prix_ref(prix, reference):

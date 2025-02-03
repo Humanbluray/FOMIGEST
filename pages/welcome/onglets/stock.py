@@ -18,7 +18,6 @@ class Stock(ft.Container):
                 ft.DataColumn(ft.Text("Désignation".upper())),
                 ft.DataColumn(ft.Text("Nature".upper())),
                 ft.DataColumn(ft.Text("qté".upper())),
-                ft.DataColumn(ft.Text("prix".upper())),
                 ft.DataColumn(ft.Text("".upper()))
             ]
         )
@@ -210,16 +209,83 @@ class Stock(ft.Container):
                                     ),
                                     ft.Divider(height=1, color=ft.colors.TRANSPARENT),
                                     ft.Column(
+                                        expand=True,
                                         controls=[
                                             ft.Text("table des mouvements".upper(), size=11, font_family="Poppins Medium", weight=ft.FontWeight.BOLD),
-                                            ft.Divider(height=1, thickness=1),
-                                        ], spacing=0
+                                            ft.Container(
+                                                padding=ft.padding.only(10, 5, 10, 5),
+                                                expand=True,
+                                                content=ft.ListView(expand=True, controls=[self.histo_table])
+                                            )
+                                        ], spacing=5
+                                    ),
+                                ]
+                            )
+                        )
+                    ]
+                )
+            )
+        )
+
+        # Achat window
+        self.achat_ref = ft.Text(size=12, font_family="Poppins Medium", color="white")
+        self.achat_des = ft.TextField(**readonly_field_style2, width=500, label="Désignation",
+                                      prefix_icon=ft.icons.DISCOUNT_OUTLINED)
+        self.achat_unite = ft.TextField(**readonly_field_style2, width=100, label="Unité")
+        self.achat_qte = ft.TextField(**readonly_field_style2, width=100, label="Stock")
+        self.achat_prix = ft.TextField(**readonly_field_style2, width=200, label="Prix")
+        self.achat_qte_2 = ft.TextField(**numbers_field_style, width=100, label="Qté", prefix_icon=ft.icons.MONETIZATION_ON_OUTLINED)
+        self.achat_prix_2 = ft.TextField(**numbers_field_style, width=200, label="Prix Achat", prefix_icon=ft.icons.MONETIZATION_ON_OUTLINED)
+        self.achat_com = ft.TextField(**field_style, prefix_icon=ft.icons.EDIT_DOCUMENT, width=400, label="Commentaire")
+        self.achat_window = ft.Card(
+            elevation=20, surface_tint_color="#f0f0f6", width=550, height=400,
+            clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
+            scale=ft.transform.Scale(0), expand=True,
+            animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
+            content=ft.Container(
+                padding=10, bgcolor="#f0f0f6", expand=True,
+                content=ft.Column(
+                    controls=[
+                        ft.Container(
+                            padding=ft.padding.only(10, 5, 10, 5), bgcolor="white", border_radius=12,
+                            content=ft.Row(
+                                controls=[
+                                    ft.Text("Achat".upper(), size=14, font_family="Poppins Bold"),
+                                    ft.IconButton("close", bgcolor="#f0f0f6", icon_color=FIRST_COLOR, scale=0.6,
+                                                  on_click=self.close_achat_window)
+                                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+                            )
+                        ),
+                        ft.Container(
+                            padding=10, bgcolor="white", border_radius=12,
+                            content=ft.Column(
+                                controls=[
+                                    ft.Row(
+                                        controls=[
+                                            ft.Text("Référence".upper(), size=12, font_family="Poppins Medium"),
+                                            ft.Container(
+                                                padding=ft.padding.only(10, 3, 10, 3), bgcolor=SECOND_COLOR,
+                                                border_radius=10,
+                                                content=ft.Row([self.achat_ref], alignment=ft.MainAxisAlignment.CENTER)
+                                            )
+                                        ]
+                                    ),
+                                    self.achat_des,
+                                    ft.Row(
+                                        controls=[self.achat_unite, self.achat_qte, self.achat_prix]
                                     ),
                                     ft.Divider(height=1, color=ft.colors.TRANSPARENT),
-                                    ft.Container(
-                                        padding=ft.padding.only(10, 5, 10, 5), border=ft.border.all(1, "grey"), border_radius=12,
-                                        expand=True,
-                                        content=ft.ListView(expand=True, controls=[self.histo_table])
+                                    ft.Column(
+                                        controls=[
+                                            ft.Text("ACHAT".upper(), size=11, font_family="Poppins Medium", weight=ft.FontWeight.BOLD),
+                                            ft.Divider(height=1, thickness=1)
+                                        ], spacing=0
+                                    ),
+                                    ft.Row(
+                                        controls=[self.achat_qte_2, self.achat_prix_2]
+                                    ),
+                                    AnyButton(
+                                        FIRST_COLOR, "", "Valider achat", "white", 200, self.make_an_achat
                                     )
                                 ]
                             )
@@ -232,14 +298,10 @@ class Stock(ft.Container):
         # Content ...
         self.content = ft.Stack(
             controls=[
-                self.main_window, self.new_ref_window, self.edit_ref_window, self.histo_window
+                self.main_window, self.new_ref_window, self.edit_ref_window, self.histo_window, self.achat_window
             ], alignment=ft.alignment.center
         )
-        self.load_lists()
         self.load_datas()
-
-    def load_lists(self):
-        pass
 
     def load_datas(self):
         datas = be.all_references()
@@ -261,12 +323,12 @@ class Stock(ft.Container):
                         ft.DataCell(ft.Text(data["designation"])),
                         ft.DataCell(ft.Text(nature)),
                         ft.DataCell(ft.Text(data["qte"])),
-                        ft.DataCell(ft.Text(ajout_separateur(data["prix"]))),
                         ft.DataCell(
                             ft.Row(
                                 controls=[
                                     CtButton("edit_outlined", ft.colors.BLUE_300, "Modifier", data, self.open_edit_ref_window),
-                                    CtButton(ft.icons.LIST, ft.colors.BLACK45, "Historique", data, self.show_historique)
+                                    CtButton(ft.icons.LIST, ft.colors.BLACK45, "Historique", data, self.show_historique),
+                                    CtButton(ft.icons.ADD, ft.colors.BLACK45, "Achat", data, self.open_achat_window)
                                 ], spacing=0, alignment=ft.MainAxisAlignment.END
                             )
                         )
@@ -295,12 +357,12 @@ class Stock(ft.Container):
                         ft.DataCell(ft.Text(data["designation"])),
                         ft.DataCell(ft.Text(nature)),
                         ft.DataCell(ft.Text(data["qte"])),
-                        ft.DataCell(ft.Text(ajout_separateur(data["prix"]))),
                         ft.DataCell(
                             ft.Row(
                                 controls=[
                                     CtButton("edit_outlined", ft.colors.BLUE_300, "Modifier", data, self.open_edit_ref_window),
-                                    CtButton(ft.icons.LIST, ft.colors.BLACK45, "Historique", data, self.show_historique)
+                                    CtButton(ft.icons.LIST, ft.colors.BLACK45, "Historique", data, self.show_historique),
+                                    CtButton(ft.icons.ADD, ft.colors.BLACK45, "Achat", data, self.open_achat_window)
                                 ], spacing=0, alignment=ft.MainAxisAlignment.END
                             )
                         )
@@ -421,3 +483,69 @@ class Stock(ft.Container):
     def close_histo_window(self, e):
         self.histo_window.scale = 0
         self.histo_window.update()
+
+    def close_achat_window(self, e):
+        self.achat_window.scale = 0
+        self.achat_window.update()
+
+    def open_achat_window(self, e):
+        datas = be.all_historique_by_ref(e.control.data["reference"])
+        self.achat_des.value = e.control.data["designation"]
+        self.achat_qte.value = e.control.data["qte"]
+        self.achat_prix.value = ajout_separateur(e.control.data["prix"])
+        self.achat_unite.value = e.control.data["unite"].upper()
+        self.achat_ref.value = e.control.data["reference"]
+
+        for widget in (self.achat_ref, self.achat_des, self.achat_qte, self.achat_prix, self.achat_unite):
+            widget.update()
+
+        self.achat_window.scale = 1
+        self.achat_window.update()
+
+    def make_an_achat(self, e):
+        count = 0
+        for widget in (self.achat_qte_2, self.achat_prix_2):
+            if widget.value == "" or widget.value is None:
+                count += 1
+
+        if count == 0:
+            be.add_achat(
+                be.find_numero_acaht(), self.achat_ref.value, self.achat_des.value,
+                int(self.achat_qte_2.value), int(self.achat_prix_2.value), self.achat_com.value
+            )
+            ancien_stock = int(self.achat_qte.value)
+            new_stock = int(self.achat_qte_2.value)
+            ancien_prix = int(self.achat_prix.value)
+            new_prix = int(self.achat_prix_2.value)
+            pmp = ((ancien_stock * ancien_prix) + (new_stock * new_prix)) / (new_stock + ancien_stock)
+            print(ancien_stock, ancien_prix)
+            print(new_stock, new_prix)
+            # mise à jour de la qte et du prix
+            be.update_stock((new_stock + ancien_stock), self.achat_ref.value)
+            be.update_prix_by_ref(pmp, self.achat_ref.value)
+
+            # Ajouter à l'historique
+            be.add_historique(self.achat_ref.value, "AD", be.find_numero_acaht(), ancien_stock, new_stock, (ancien_stock + new_stock))
+
+            self.cp.box.title.value = "Validé"
+            self.cp.box.content.value = "Achat validé"
+            self.cp.box.open = True
+            self.cp.box.update()
+
+            self.achat_qte_2.value = None
+            self.achat_prix_2.value = None
+            self.achat_qte_2.update()
+            self.achat_prix_2.update()
+
+            self.achat_window.scale = 0
+            self.achat_window.update()
+
+            self.load_datas()
+            self.table.update()
+            self.results.update()
+
+        else:
+            self.cp.box.title.value = "Erreur"
+            self.cp.box.content.value = "Le prix et la qté sont obligatoires"
+            self.cp.box.open = True
+            self.cp.box.update()

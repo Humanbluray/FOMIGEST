@@ -1,5 +1,4 @@
 import time
-
 import flet as ft
 from utils import login_style, AnyButton
 from utils.constantes import FIRST_COLOR
@@ -9,6 +8,7 @@ user_infos = {
     "username": "", "userlevel": "", "userlogin": "", "status": False,
     "usernom": "", "userprenom": "",
 }
+LOGO_URL = "https://byggqnusosovxulbchup.supabase.co/storage/v1/object/public/logos//logo.jpg"
 
 
 class Landing(ft.View):
@@ -54,6 +54,7 @@ class Landing(ft.View):
                 border_radius=16, padding=20, width=230, bgcolor="white",
                 content=ft.Column(
                     controls=[
+                        ft.Image(src=LOGO_URL, width=100, height=100),
                         ft.Text("Connexion", size=16, font_family="Poppins Bold"),
                         ft.Divider(height=1, color="transparent"),
                         self.login, self.passw, self.bt_connect, self.bt_first
@@ -84,7 +85,7 @@ class Landing(ft.View):
                 user_infos["userlogin"] = details["login"]
                 user_infos["status"] = True
                 self.page.go(f"/welcome/{user_infos['username']}")
-                be.add_activity(user_infos["username"], "Connexion")
+                be.add_activity(user_infos["userlogin"], "Connexion".upper())
                 time.sleep(10)
                 user_infos["status"] = False
 

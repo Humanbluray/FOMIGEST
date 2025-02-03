@@ -20,6 +20,9 @@ url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 supabase = create_client(url, key)
 
+FOOTER_URl = "https://byggqnusosovxulbchup.supabase.co/storage/v1/object/public/logos//footer.png"
+HEARDER_URL = "https://byggqnusosovxulbchup.supabase.co/storage/v1/object/public/logos//header.png"
+BUCKET_DEVIS = "devis"
 
 class OneArticle(ft.Container):
     def __init__(self, cp: object, ref: str, des: str, prix: int):
@@ -1209,7 +1212,7 @@ class Devis(ft.Container):
                 objet, remise, mt_lettres, note_bene, delai, point_liv, validite, paiement,
                 self.cp.user_infos['username']
             )
-            be.add_activity(self.cp.user_infos["userlogin"], f"Création du devis {self.new_num.value}")
+            be.add_activity(self.cp.user_infos["userlogin"], f"Création du devis {self.new_num.value}".upper())
 
             self.cp.box.title.value = "Validé"
             self.cp.box.content.value = f"Devis N° {self.new_num.value} créé"
@@ -1246,7 +1249,7 @@ class Devis(ft.Container):
             mt, int(self.edit_remise.value), self.edit_notabene.value, self.edit_delai.value, self.edit_point_liv.value,
             int(self.edit_validite.value), int(self.edit_paiement.value), self.edit_objet.value, num_devis
         )
-        be.add_activity(self.cp.user_infos["userlogin"], f"modification du devis {self.edit_num.value}")
+        be.add_activity(self.cp.user_infos["userlogin"], f"modification du devis {self.edit_num.value}".upper())
 
         # on supprime les details devis précéédents
         be.delete_devis_details(num_devis)
@@ -1314,6 +1317,8 @@ class Devis(ft.Container):
                 numero_facture, info_facture["client"], info_facture["montant"], info_facture["objet"], info_facture["remise"], "",
                 self.fac_num_devis.value, self.bc_client.value, self.ov_client.value, info_facture["paiement"])
 
+            be.add_activity(self.cp.user_infos["userlogin"], f"Facturation du devis {self.fac_num_devis.value}".upper())
+
             # Table details facture
             for row in details:
                 be.add_details_facture(numero_facture, row["reference"], row["qte"], row["prix"])
@@ -1328,8 +1333,8 @@ class Devis(ft.Container):
             be.maj_statut_devis(self.fac_num_devis.value)
 
             # remplir les bordereaux de livraison
-            initiales_client = be.search_initiales(info_facture["client"])
-            numero_bordereau = be.find_bordereau_num(initiales_client)
+            id_client = info_facture["client"]
+            numero_bordereau = be.find_bordereau_num(id_client)
             be.add_bordereau(numero_bordereau, numero_facture, self.bc_client.value)
 
             for row in details:
@@ -1420,9 +1425,14 @@ class Devis(ft.Container):
                     footer_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
                     # Ajouter l'image dans l'en-tête
-                    header_paragraph.add_run().add_picture("assets/images/header.png", width=Cm(18))
+                    response = requests.get(HEARDER_URL)
+                    stream_header = io.BytesIO(response.content)
+                    header_paragraph.add_run().add_picture(stream_header, width=Cm(18))
+
                     # Ajouter l'image dans le pied de page
-                    footer_paragraph.add_run().add_picture("assets/images/footer.png", width=Cm(18))
+                    response = requests.get(FOOTER_URl)
+                    stream_footer = io.BytesIO(response.content)
+                    footer_paragraph.add_run().add_picture(stream_footer, width=Cm(18))
 
                 header_and_footer()
 
@@ -2031,7 +2041,7 @@ class Devis(ft.Container):
                 file_path = f"{time_stamp}_{filename}"
 
                 # Upload vers Supabase Storage
-                resp = supabase.storage.from_("devis").upload(
+                resp = supabase.storage.from_(BUCKET_DEVIS).upload(
                     file_path,
                     file,  # Fichier en bytes
                     file_options={
@@ -2043,7 +2053,7 @@ class Devis(ft.Container):
                     return None, resp["error"]
 
                 # 🔹 Générer l'URL publique
-                url = supabase.storage.from_("devis").get_public_url(file_path)
+                url = supabase.storage.from_(BUCKET_DEVIS).get_public_url(file_path)
                 return url, None
 
             file_bytes = generate_word_doc()
