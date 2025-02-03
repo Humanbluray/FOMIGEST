@@ -25,7 +25,7 @@ def connexion_base():
                     delai           TEXT,
                     point_liv       TEXT,
                     validite        INTEGER,
-                    paiement        INTEGER,
+                    paiement        TEXT,
                     cree_par        TEXT,
                     last_modif      TEXT)""")
 
@@ -177,6 +177,9 @@ def connexion_base():
                         hour          TEXT)""")
     conn.commit()
     conn.close()
+
+
+connexion_base()
 
 
 def all_activite_by_user(user):

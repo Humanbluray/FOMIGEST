@@ -425,7 +425,7 @@ class Devis(ft.Container):
         self.new_objet = ft.TextField(**field_style, width=700, label="Objet du devis",
                                        prefix_icon=ft.icons.MAIL_OUTLINED)
         self.new_notabene = ft.TextField(**field_style, width=700, label="NB", prefix_icon=ft.icons.NOTES_OUTLINED)
-        self.new_paiement = ft.TextField(**numbers_field_style, width=110, label="Paiement",
+        self.new_paiement = ft.TextField(**field_style, width=200, label="Paiement",
                                           prefix_icon=ft.icons.WATCH_LATER_OUTLINED)
         self.new_validite = ft.TextField(**numbers_field_style, width=120, label="validité",
                                           prefix_icon=ft.icons.EVENT_AVAILABLE)
@@ -568,7 +568,7 @@ class Devis(ft.Container):
         self.edit_lettres = ft.TextField(**readonly_field_style, width=700, prefix_icon=ft.icons.LABEL_OUTLINED, label="Montant en lettres")
         self.edit_objet = ft.TextField(**field_style, width=700, label="Objet du devis", prefix_icon=ft.icons.MAIL_OUTLINED)
         self.edit_notabene = ft.TextField(**field_style, width=700, label="NB", prefix_icon=ft.icons.NOTES_OUTLINED)
-        self.edit_paiement = ft.TextField(**numbers_field_style, width=110, label="Paiement", prefix_icon=ft.icons.WATCH_LATER_OUTLINED)
+        self.edit_paiement = ft.TextField(**field_style, width=200, label="Paiement", prefix_icon=ft.icons.WATCH_LATER_OUTLINED)
         self.edit_validite = ft.TextField(**numbers_field_style, width=120, label="validité", prefix_icon=ft.icons.EVENT_AVAILABLE)
         self.edit_point_liv = ft.TextField(**field_style, width=200, label="pt. livraison", prefix_icon=ft.icons.LOCATION_ON_OUTLINED)
         self.edit_delai = ft.TextField(**field_style, width=150, label="Délai livraison", prefix_icon=ft.icons.TIMELAPSE_OUTLINED)
@@ -1988,7 +1988,7 @@ class Devis(ft.Container):
                     run5.font.name = "calibri"
                     run5.font.size = Pt(10)
                     run5.font.color.rgb = RGBColor(175, 175, 175)
-                    run6 = pg2.add_run(f"{be.show_info_devis(self.edit_num.value)["paiement"]} Jours après dépôt de facture".upper())
+                    run6 = pg2.add_run(f"{be.show_info_devis(self.edit_num.value)["paiement"]}".upper())
                     run6.font.name = "calibri"
                     run6.font.size = Pt(10)
                     run6.font.color.rgb = RGBColor(0, 0, 0)

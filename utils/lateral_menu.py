@@ -101,6 +101,11 @@ class Menu(ft.Card):
         self.factures = ItemMenu("factures".upper(), ft.icons.PAYMENTS_OUTLINED, self.color_icon, self.color_text)
         self.users = ItemMenu("utilisateurs".upper(), ft.icons.PERSON_OUTLINE_OUTLINED, self.color_icon, self.color_text)
 
+        if user_infos["userlevel"] == "SUPERADMIN" or user_infos["userlevel"] == "ADMINISTRATEUR":
+            self.users.visble = True
+        else:
+            self.users.visible = False
+
         self.children = [
             self.clients, self.fournisseurs, self.stock, self.commandes, self.devis, self.factures, self.users
         ]
