@@ -1,5 +1,5 @@
 import datetime
-
+import string
 
 def ecrire_date(date: str):
     """This function writes the date of the day"""
@@ -454,4 +454,22 @@ def convertir_date_en_objet(date: str):
     return objet
 
 
+def is_correct_pasword(password):
+    nombres = list(string.digits)
+    majuscules = list(string.ascii_uppercase)
+    speciales = list(string.punctuation)
+
+    letters = list(password)
+    print(letters)
+
+    type_nombres = [letter for letter in letters if letter in nombres]
+    type_majucules = [letter for letter in letters if letter in majuscules]
+    type_speciales = [letter for letter in letters if letter in speciales]
+
+    if len(letters) >= 8 and len(type_nombres) != 0 and len(type_majucules) != 0 and len(type_speciales) != 0:
+        return True
+    else:
+        return False
+
+print(is_correct_pasword("Carlos14145"))
 

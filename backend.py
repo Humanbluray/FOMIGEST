@@ -1108,7 +1108,7 @@ def add_user(nom, prenom, email, niveau, poste):
     conn = sql.connect(my_base)
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO utilisateurs values (?,?,?,?,?,?,?,?)",
+        "INSERT INTO utilisateurs values (?,?,?,?,?,?,?,?,?)",
         (cur.lastrowid, "", "", nom, prenom, email, "nouveau".upper(), niveau, poste)
     )
     conn.commit()
@@ -1142,6 +1142,57 @@ def search_user_by_mail(email):
     conn.close()
     return final
 
+
+def make_user_new(login, password, email):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute(
+        """UPDATE utilisateurs SET 
+        login = ?,
+        pass = ?,
+        statut =?
+        WHERE email = ?""", (login, password, "ACTIF", email)
+    )
+    conn.commit()
+    conn.close()
+
+
+def desactivate_user(email):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute(
+        """UPDATE utilisateurs SET 
+        login = ?,
+        pass = ?,
+        statut =?
+        WHERE email = ?""", ("", "", "INACTIF", email)
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_user(email):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute(
+        "DELETE FROM utlisateurs WHERE  email =?", (email,)
+    )
+    conn.commit()
+    conn.close()
+
+
+def reactivate_user(email):
+    conn = sql.connect(my_base)
+    cur = conn.cursor()
+    cur.execute(
+        """UPDATE utilisateurs SET 
+        login = ?,
+        pass = ?,
+        statut =?
+        WHERE email = ?""", ("", "", "NOUVEAU", email)
+    )
+    conn.commit()
+    conn.close()
 
 # def check_user(login: str):
 #     conn = sql.connect(my_base)

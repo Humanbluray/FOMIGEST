@@ -120,9 +120,12 @@ class Menu(ft.Card):
                                 border_radius=10, bgcolor="#f2f2f2",
                                 content=ft.Row(
                                     controls=[
-                                        ft.Icon(ft.icons.ACCOUNT_CIRCLE, size=18, color="black87",
-                                                tooltip=f"{user_infos['username']}".upper()),
-                                        ft.Text(f"{user_infos['userlogin']}".upper(), size=12, font_family="Poppins Medium"),
+                                        ft.Icon(
+                                            ft.icons.ACCOUNT_CIRCLE, size=18, color="black87",
+                                                tooltip=f"{user_infos['usernom']} {user_infos['userprenom']}".upper(),
+                                            data=user_infos
+                                        ),
+                                        ft.Text(f"{user_infos['usernom']}".upper(), size=12, font_family="Poppins Medium"),
 
                                     ], alignment=ft.MainAxisAlignment.START
                                 )

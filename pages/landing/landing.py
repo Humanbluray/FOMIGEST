@@ -5,7 +5,10 @@ from utils import login_style, AnyButton
 from utils.constantes import FIRST_COLOR
 import backend as be
 
-user_infos = {"username": "", "userlevel": "", "userlogin": "", "status": False}
+user_infos = {
+    "username": "", "userlevel": "", "userlogin": "", "status": False,
+    "usernom": "", "userprenom": "",
+}
 
 
 class Landing(ft.View):
@@ -51,7 +54,7 @@ class Landing(ft.View):
                 border_radius=16, padding=20, width=230, bgcolor="white",
                 content=ft.Column(
                     controls=[
-                        ft.Image(src="assets/images/logo.jpg", width=100, height=100),
+                        ft.Text("Connexion", size=16, font_family="Poppins Bold"),
                         ft.Divider(height=1, color="transparent"),
                         self.login, self.passw, self.bt_connect, self.bt_first
                     ], horizontal_alignment=ft.CrossAxisAlignment.CENTER
@@ -72,10 +75,11 @@ class Landing(ft.View):
 
     def connexion(self, e):
         if be.check_login(self.login.value, self.passw.value):
-
             if be.search_user_infos(self.login.value)['statut'] == "actif".upper():
                 details = be.search_user_infos(self.login.value)
-                user_infos["username"] = details["nom"]
+                user_infos["username"] = details['nom']
+                user_infos['usernom'] = details['nom']
+                user_infos['userprenom'] = details["prenom"]
                 user_infos["userlevel"] = details["niveau"]
                 user_infos["userlogin"] = details["login"]
                 user_infos["status"] = True
@@ -87,7 +91,7 @@ class Landing(ft.View):
             else:
                 user_infos["status"] = False
                 self.box.title.value = "Erreur"
-                self.box.content.value = "Compte inactif! contactez votre administrateur !"
+                self.box.content.value = "Contactez votre administrateur !"
                 self.box.open = True
                 self.box.update()
 

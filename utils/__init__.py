@@ -7,7 +7,7 @@ datatable_style: dict = dict(
 )
 
 search_field_style: dict = dict(
-    height=45,
+    height=45, dense=True,
     border_color="#f2f2f2", bgcolor="#f2f2f2",
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
@@ -17,7 +17,7 @@ search_field_style: dict = dict(
     capitalization=ft.TextCapitalization.CHARACTERS
 )
 field_style: dict = dict(
-    height=45,
+    height=45, dense=True,
     focused_border_color=FIRST_COLOR,
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
@@ -27,7 +27,7 @@ field_style: dict = dict(
     capitalization=ft.TextCapitalization.CHARACTERS
 )
 field_mail_style: dict = dict(
-    height=45,
+    height=45, dense=True,
     focused_border_color=FIRST_COLOR,
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
@@ -36,7 +36,7 @@ field_mail_style: dict = dict(
     border_radius=10, border_width=1, cursor_color=SECOND_COLOR, focused_border_width=2,
 )
 numbers_field_style: dict = dict(
-    height=45,
+    height=45, dense=True,
     focused_border_color=FIRST_COLOR,
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=11, font_family="Poppins Medium", color="black"),
@@ -47,7 +47,7 @@ numbers_field_style: dict = dict(
     input_filter=ft.NumbersOnlyInputFilter(), text_align=ft.TextAlign.RIGHT.RIGHT
 )
 login_style: dict = dict(
-    height=45,
+    height=45, dense=True,
     focused_border_color=FIRST_COLOR,
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
@@ -57,7 +57,7 @@ login_style: dict = dict(
     focused_border_width=2,
 )
 inactive_field_style: dict = dict(
-    height=45, disabled=True,
+    height=45, disabled=True, dense=True,
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
     hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
@@ -66,7 +66,7 @@ inactive_field_style: dict = dict(
     capitalization=ft.TextCapitalization.CHARACTERS
 )
 readonly_field_style: dict = dict(
-    height=45, read_only=True,
+    height=45, read_only=True, dense=True,
     border_color=None, bgcolor=None, border=ft.InputBorder.NONE,
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=11, font_family="Poppins Medium", color="black"),
@@ -76,7 +76,7 @@ readonly_field_style: dict = dict(
     capitalization=ft.TextCapitalization.CHARACTERS
 )
 readonly_field_style2: dict = dict(
-    height=45, read_only=True,
+    height=45, read_only=True, dense=True,
     border_color="#f2f2f2", bgcolor="#f2f2f2",
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=11, font_family="Poppins Medium", color="black"),
@@ -86,7 +86,7 @@ readonly_field_style2: dict = dict(
     capitalization=ft.TextCapitalization.CHARACTERS
 )
 readonly_date_style: dict = dict(
-    focused_border_color=FIRST_COLOR,
+    focused_border_color=FIRST_COLOR, dense=True,
     height=45, read_only=True,
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=11, font_family="Poppins Medium", color="black"),
@@ -97,7 +97,7 @@ readonly_date_style: dict = dict(
 )
 
 date_field_style: dict = dict(
-    height=45,
+    height=45, dense=True,
     focused_border_width=2, focused_border_color=FIRST_COLOR,
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
     hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
@@ -107,7 +107,7 @@ date_field_style: dict = dict(
 )
 
 drop_style: dict = dict(
-    height=45, border_radius=10,
+    height=45, border_radius=10, dense=True,
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
     text_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
     focused_border_color=FIRST_COLOR, border_width=1,
@@ -134,7 +134,7 @@ class AnyButton(ft.ElevatedButton):
                 controls=[
                     # ft.Icon(my_icon, color=text_color, size=20),
                     ft.Text(
-                        title, size=14, font_family="Poppins Medium", color=text_color,
+                        title, size=12, font_family="Poppins Medium", color=text_color,
                         scale=ft.transform.Scale(1),
                         animate_scale=ft.animation.Animation(300, ft.AnimationCurve.FAST_OUT_SLOWIN),
                     )
@@ -172,6 +172,32 @@ class CtButton(ft.Container):
     def hover_ct(self, e):
         if e.data == "true":
             self.scale = 1.4
+            self.update()
+        else:
+            self.scale = 1
+            self.update()
+
+
+class ColoredCtButton(ft.Container):
+    def __init__(self, my_icon, my_color, my_tool,my_datas, on_click_function,):
+        super().__init__(
+            border_radius=6, padding=5,
+            on_click=on_click_function,
+            scale=ft.transform.Scale(1),
+            animate_scale=ft.animation.Animation(300, ft.AnimationCurve.EASE_IN_OUT),
+            on_hover=self.hover_ct, bgcolor="#f3f3f3",
+            border=ft.border.all(1, my_color),
+            data=my_datas,
+            tooltip=my_tool,
+            content=ft.Icon(
+                my_icon, color=my_color, size=18
+            )
+        )
+        self.my_icon = my_icon
+
+    def hover_ct(self, e):
+        if e.data == "true":
+            self.scale = 1.3
             self.update()
         else:
             self.scale = 1
