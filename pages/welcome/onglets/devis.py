@@ -12,6 +12,7 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 import os
 import io
+import requests
 from dotenv import load_dotenv
 from supabase import create_client
 
