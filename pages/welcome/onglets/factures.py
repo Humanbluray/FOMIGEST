@@ -1089,7 +1089,7 @@ class Factures(ft.Container):
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
                             mt_taxe = int(mt_total * TVA_VALUE)
-                            mt_ttc = mt_total - mt_taxe
+                            mt_ttc = mt_total + mt_taxe
                             mt_ir = int(mt_total * IR_VALUE[regime])
                             mt_nap = mt_ttc - mt_ir
 
@@ -1127,7 +1127,7 @@ class Factures(ft.Container):
                             rem = int(mt_total * int(self.edit_remise.value)/100)
                             mt_remise = mt_total - rem
                             mt_taxe = int(mt_remise * TVA_VALUE)
-                            mt_ttc = mt_remise - mt_taxe
+                            mt_ttc = mt_remise + mt_taxe
                             mt_ir = int(mt_total * IR_VALUE[regime])
                             mt_nap = mt_ttc - mt_ir
 
@@ -1233,7 +1233,7 @@ class Factures(ft.Container):
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
                             mt_taxe = int(mt_total * TVA_VALUE)
-                            mt_ttc = mt_total - mt_taxe
+                            mt_ttc = mt_total + mt_taxe
 
                             draw_simple_paragraph(
                                 f"TVA:    {ajout_separateur(mt_taxe)}",
@@ -1259,7 +1259,7 @@ class Factures(ft.Container):
                             rem = int(mt_total * int(self.edit_remise.value) / 100)
                             mt_remise = mt_total - rem
                             mt_taxe = int(mt_remise * TVA_VALUE)
-                            mt_ttc = mt_remise - mt_taxe
+                            mt_ttc = mt_remise + mt_taxe
 
                             draw_simple_paragraph(
                                 f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
@@ -1773,7 +1773,7 @@ class Factures(ft.Container):
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
                             mt_taxe = int(mt_total * TVA_VALUE)
-                            mt_ttc = mt_total - mt_taxe
+                            mt_ttc = mt_total + mt_taxe
                             mt_ir = int(mt_total * IR_VALUE[regime])
                             mt_nap = mt_ttc - mt_ir
 
@@ -1811,7 +1811,7 @@ class Factures(ft.Container):
                             rem = int(mt_total * int(self.edit_remise.value)/100)
                             mt_remise = mt_total - rem
                             mt_taxe = int(mt_remise * TVA_VALUE)
-                            mt_ttc = mt_remise - mt_taxe
+                            mt_ttc = mt_remise + mt_taxe
                             mt_ir = int(mt_total * IR_VALUE[regime])
                             mt_nap = mt_ttc - mt_ir
 
@@ -1917,7 +1917,7 @@ class Factures(ft.Container):
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
                             mt_taxe = int(mt_total * TVA_VALUE)
-                            mt_ttc = mt_total - mt_taxe
+                            mt_ttc = mt_total + mt_taxe
 
                             draw_simple_paragraph(
                                 f"TVA:    {ajout_separateur(mt_taxe)}",
@@ -1943,7 +1943,7 @@ class Factures(ft.Container):
                             rem = int(mt_total * int(self.edit_remise.value) / 100)
                             mt_remise = mt_total - rem
                             mt_taxe = int(mt_remise * TVA_VALUE)
-                            mt_ttc = mt_remise - mt_taxe
+                            mt_ttc = mt_remise + mt_taxe
 
                             draw_simple_paragraph(
                                 f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
