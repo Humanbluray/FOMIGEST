@@ -195,9 +195,6 @@ def connexion_base():
         print(f"{ex}")
 
 
-print(db_user)
-
-
 def all_activite_by_user(user):
     conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
     cur = conn.cursor(buffered=True)
