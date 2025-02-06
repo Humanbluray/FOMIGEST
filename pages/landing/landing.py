@@ -12,7 +12,7 @@ LOGO_URL = "https://byggqnusosovxulbchup.supabase.co/storage/v1/object/public/lo
 
 
 class Landing(ft.View):
-    def __init__(self, page):
+    def __init__(self, page: ft.Page):
 
         super().__init__(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,

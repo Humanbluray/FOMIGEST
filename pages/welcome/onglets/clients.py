@@ -197,7 +197,7 @@ class Clients(ft.Container):
         self.edit_contact = ft.TextField(**numbers_field_style, width=170, label="Contact",prefix_icon=ft.icons.PHONE_ANDROID_OUTLINED)
         self.edit_nui = ft.TextField(**field_style, width=200, label="NUI")
         self.edit_rc = ft.TextField(**field_style, width=200, label="RC")
-        self.edit_courriel = ft.TextField(**field_style, width=200, label="Email", prefix_icon=ft.icons.MAIL_OUTLINED)
+        self.edit_courriel = ft.TextField(**field_mail_style, width=200, label="Email", prefix_icon=ft.icons.MAIL_OUTLINED)
         self.edit_commercial = ft.TextField(**field_style, width=400, label="Commercial", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
         self.bt_edit = AnyButton(FIRST_COLOR, "edit", "Modifier", "white", 170, self.update_client)
         self.edit_window = ft.Card(
@@ -249,7 +249,7 @@ class Clients(ft.Container):
         self.new_name = ft.TextField(**field_style, width=400, label="Nom du client",
                                       prefix_icon=ft.icons.PERSON_PIN_OUTLINED)
         self.new_ini = ft.TextField(**field_style, width=120, label="Initiales", )
-        self.new_contact = ft.TextField(**numbers_field_style, width=170, label="Contact",
+        self.new_contact = ft.TextField(**field_style, width=200, label="Contact",
                                          prefix_icon=ft.icons.PHONE_ANDROID_OUTLINED)
         self.new_nui = ft.TextField(**field_style, width=200, label="NUI")
         self.new_rc = ft.TextField(**field_style, width=200, label="RC")
@@ -463,6 +463,10 @@ class Clients(ft.Container):
                 for widget in (self.new_name, self.new_ini, self.new_contact, self.new_nui, self.new_rc, self.new_courriel, self.new_commercial):
                     widget.value = None
                     widget.update()
+
+                self.load_datas()
+                self.table.update()
+                self.results.update()
 
     def close_factures_window(self, e):
         self.factures_window.scale = 0

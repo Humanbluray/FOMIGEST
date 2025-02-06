@@ -1,192 +1,208 @@
 import sqlite3 as sql
 import datetime
-# today = datetime.date.today()
+import os
+import mysql.connector as mc
+from dotenv import load_dotenv
+
+load_dotenv()
+hostname = os.environ.get("HOSTNAME")
+db_user = os.environ.get("DB_USER")
+password = os.environ.get("PASSWORD")
+dbname = os.environ.get("DBNAME")
+port = os.environ.get("PORT")
+
 my_base = "facturier.db"
 INITIALES = "FMD"
 
 
 def connexion_base():
     # create the database
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, password=password, database=dbname, port=port)
+    # print('connexion etablie')
+    cur = conn.cursor(buffered=True)
 
+    try:
     # devis
-    cur.execute("""CREATE TABLE IF NOT EXISTS devis (
-                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                    numero          TEXT UNIQUE,
-                    date            DATE,
-                    client          INTEGER REFERENCES "clients"("id"),
-                    montant         NUMERIC,
-                    objet           TEXT,
-                    remise          INTEGER,
-                    montant_lettres TEXT,
-                    statut          TEXT,
-                    note_bene       TEXT,
-                    delai           TEXT,
-                    point_liv       TEXT,
-                    validite        INTEGER,
-                    paiement        TEXT,
-                    cree_par        TEXT,
-                    last_modif      TEXT)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS devis (
+                        id              INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        numero          TEXT,
+                        date            DATE,
+                        client          INTEGER,
+                        montant         NUMERIC,
+                        objet           TEXT,
+                        remise          INTEGER,
+                        montant_lettres TEXT,
+                        statut          TEXT,
+                        note_bene       TEXT,
+                        delai           TEXT,
+                        point_liv       TEXT,
+                        validite        INTEGER,
+                        paiement        TEXT,
+                        cree_par        TEXT,
+                        last_modif      TEXT)""")
 
-    # Details devis
-    cur.execute("""CREATE TABLE IF NOT EXISTS devis_details (
-                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    numero    TEXT,
-                    reference TEXT,
-                    qte       INTEGER,
-                    prix      NUMERIC)""")
+        # Details devis
+        cur.execute("""CREATE TABLE IF NOT EXISTS devis_details (
+                        id        INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        numero    TEXT,
+                        reference TEXT,
+                        qte       INTEGER,
+                        prix      NUMERIC)""")
 
-    # Articles
-    cur.execute("""CREATE TABLE IF NOT EXISTS articles (
-                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    reference   TEXT,
-                    designation TEXT,
-                    nature      TEXT,
-                    qté         INTEGER,
-                    prix        NUMERIC,
-                    unite       TEXT)""")
+        # Articles
+        cur.execute("""CREATE TABLE IF NOT EXISTS articles (
+                        id          INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        reference   TEXT,
+                        designation TEXT,
+                        nature      TEXT,
+                        qté         INTEGER,
+                        prix        NUMERIC,
+                        unite       TEXT)""")
 
-    # Clients
-    cur.execute("""CREATE TABLE IF NOT EXISTS clients (
-                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nom       TEXT,
-                    initiales TEXT,
-                    contact   TEXT,
-                    NUI       TEXT,
-                    RC        TEXT,
-                    courriel  TEXT,
-                    commercial TEXT)""")
+        # Clients
+        cur.execute("""CREATE TABLE IF NOT EXISTS clients (
+                        id        INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        nom       TEXT,
+                        initiales TEXT,
+                        contact   TEXT,
+                        NUI       TEXT,
+                        RC        TEXT,
+                        courriel  TEXT,
+                        commercial TEXT)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS factures (
-                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-                    numero          TEXT UNIQUE,
-                    date            DATE,
-                    client          INTEGER REFERENCES "clients"("id"),
-                    montant         NUMERIC,
-                    objet           TEXT,
-                    remise          INTEGER,
-                    montant_lettres TEXT,
-                    devis           TEXT,
-                    bc_client       TEXT,
-                    ov              TEXT,
-                    delai           INTEGER)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS factures (
+                        id              INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        numero          TEXT,
+                        date            DATE,
+                        client          INTEGER,
+                        montant         NUMERIC,
+                        objet           TEXT,
+                        remise          INTEGER,
+                        montant_lettres TEXT,
+                        devis           TEXT,
+                        bc_client       TEXT,
+                        ov              TEXT,
+                        delai           INTEGER)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS facture_details (
-                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    numero    TEXT,
-                    reference TEXT,
-                    qte       INTEGER,
-                    prix      NUMERIC)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS facture_details (
+                        id        INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        numero    TEXT,
+                        reference TEXT,
+                        qte       INTEGER,
+                        prix      NUMERIC)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS reglement (
-                    id      INTEGER PRIMARY KEY AUTOINCREMENT,
-                    facture TEXT,
-                    montant NUMERIC,
-                    type    TEXT,
-                    date    DATE)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS reglement (
+                        id      INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        facture TEXT,
+                        montant NUMERIC,
+                        type    TEXT,
+                        date    DATE)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS utilisateurs (
-                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    login     TEXT,
-                    pass      TEXT,
-                    nom       TEXT,
-                    prenom    TEXT,
-                    email     TEXT,
-                    statut    TEXT,
-                    niveau    TEXT,
-                    poste     TEXT)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS utilisateurs (
+                        id        INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        login     TEXT,
+                        pass      TEXT,
+                        nom       TEXT,
+                        prenom    TEXT,
+                        email     TEXT,
+                        statut    TEXT,
+                        niveau    TEXT,
+                        poste     TEXT)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS bordereau_details (
-                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    numero    TEXT,
-                    reference TEXT,
-                    qte       INTEGER,
-                    prix      NUMERIC)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS bordereau_details (
+                        id        INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        numero    TEXT,
+                        reference TEXT,
+                        qte       INTEGER,
+                        prix      NUMERIC)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS bordereau (
-                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                    numero     TEXT,
-                    facture    TEXT,
-                    bc_client  TEXT,
-                    date       TEXT)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS bordereau (
+                        id         INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        numero     TEXT,
+                        facture    TEXT,
+                        bc_client  TEXT,
+                        date       TEXT)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS historique (
-                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    reference TEXT,
-                    date      DATE,
-                    mouvement TEXT,
-                    num_mvt   TEXT,
-                    qte_avant INTEGER,
-                    qte_mvt   INTEGER,
-                    qte_apres INTEGER)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS historique (
+                        id        INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        reference TEXT,
+                        date      DATE,
+                        mouvement TEXT,
+                        num_mvt   TEXT,
+                        qte_avant INTEGER,
+                        qte_mvt   INTEGER,
+                        qte_apres INTEGER)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS achats (
-                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                    reference   TEXT,
-                    designation TEXT,
-                    qte         INTEGER,
-                    prix        INTEGER,
-                    commentaire  TEXT,
-                    date         DATETIME)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS achats (
+                        id              INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        reference       TEXT,
+                        designation     TEXT,
+                        qte             INTEGER,
+                        prix            INTEGER,
+                        commentaire     TEXT,
+                        date            TEXT)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS fournisseurs (
-                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nom        TEXT,
-                    initiales  TEXT,
-                    contact    TEXT,
-                    NUI        TEXT,
-                    RC         TEXT,
-                    courriel   TEXT,
-                    commercial TEXT)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS fournisseurs (
+                        id         INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        nom        TEXT,
+                        initiales  TEXT,
+                        contact    TEXT,
+                        NUI        TEXT,
+                        RC         TEXT,
+                        courriel   TEXT,
+                        commercial TEXT)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS commandes (
-                    id              INTEGER  PRIMARY KEY AUTOINCREMENT,
-                    numero          TEXT     UNIQUE,
-                    date            DATETIME,
-                    fournisseur     INTEGER     REFERENCES fournisseurs (id),
-                    montant         NUMERIC,
-                    montant_lettres TEXT,
-                    statut          TEXT)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS commandes (
+                        id                  INTEGER  PRIMARY KEY AUTO_INCREMENT,
+                        numero              TEXT,
+                        date                TEXT,
+                        fournisseur         INTEGER,
+                        montant             NUMERIC,
+                        montant_lettres     TEXT,
+                        statut              TEXT)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS commande_details (
-                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    numero    TEXT,
-                    reference TEXT,
-                    qte       INTEGER,
-                    prix      NUMERIC)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS commande_details (
+                        id          INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        numero      TEXT,
+                        reference   TEXT,
+                        qte         INTEGER,
+                        prix        NUMERIC)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS receptions (
-                    id        INTEGER  PRIMARY KEY AUTOINCREMENT,
-                    numero    TEXT,
-                    bl_client TEXT,
-                    commande  TEXT,
-                    date      TEXT )""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS receptions (
+                        id          INTEGER  PRIMARY KEY AUTO_INCREMENT,
+                        numero      TEXT,
+                        bl_client   TEXT,
+                        commande    TEXT,
+                        date        TEXT )""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS reception_details  (
-                    id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                    numero    TEXT,
-                    reference TEXT,
-                    qte       INTEGER,
-                    prix      NUMERIC)""")
+        cur.execute("""CREATE TABLE IF NOT EXISTS reception_details  (
+                        id        INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        numero    TEXT,
+                        reference TEXT,
+                        qte       INTEGER,
+                        prix      NUMERIC)""")
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS activites (
-                        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        cur.execute("""CREATE TABLE IF NOT EXISTS activites (
+                        id            INTEGER PRIMARY KEY AUTO_INCREMENT,
                         user          TEXT,
                         activity      TEXT,
                         hour          TEXT)""")
-    conn.commit()
-    conn.close()
+
+        conn.commit()
+        conn.close()
+
+    except Exception as ex:
+        print(f"{ex}")
 
 
-connexion_base()
+print(db_user)
 
 
 def all_activite_by_user(user):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
-        "SELECT * FROM activites WHERE user = ? ORDER by id DESC", (user,)
+        "SELECT * FROM activites WHERE user = %s ORDER by id DESC", (user,)
     )
     result = cur.fetchall()
     final = [
@@ -201,10 +217,10 @@ def all_activite_by_user(user):
 
 
 def add_activity(user, activity,):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
-        "INSERT INTO activites values (?,?,?,?)",
+        "INSERT INTO activites values (%s,%s,%s,%s)",
         (cur.lastrowid, user, activity, str(datetime.datetime.now().strftime("%d/%m/%Y - %H:%M:%S")))
     )
     conn.commit()
@@ -212,10 +228,10 @@ def add_activity(user, activity,):
 
 
 def add_achat(numero, ref, des, qte, prix, commentaire):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
-        "INSERT INTO achats values (?,?,?,?,?,?,?,?)",
+        "INSERT INTO achats values (%s,%s,%s,%s,%s,%s,%s,%s)",
         (cur.lastrowid, numero, ref, des, qte, prix, commentaire, str(datetime.datetime.now().strftime("%d/%m/%Y")))
     )
     conn.commit()
@@ -223,8 +239,8 @@ def add_achat(numero, ref, des, qte, prix, commentaire):
 
 
 def find_numero_acaht():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
         "SELECT count(id) FROM achats"
     )
@@ -238,10 +254,10 @@ def find_numero_acaht():
 # fonctions de la table devis et devis_details ___________________________________________________________
 def add_devis(numero, date, client, montant, objet, remise, montant_lettres, notabene, delai, point_liv, validite, paiement, username):
     statut = "Non facturé"
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""INSERT INTO devis values 
-                    (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (cur.lastrowid, numero, date, client, montant, objet, remise, montant_lettres, statut, notabene, delai, point_liv, validite, paiement, username,
                  f"{username} - {str(datetime.datetime.now().strftime("%d/%m/%Y - %H:%M:%S"))}"))
     conn.commit()
@@ -249,8 +265,8 @@ def add_devis(numero, date, client, montant, objet, remise, montant_lettres, not
 
 
 def check_ref_in_devis(reference):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT reference FROM devis_details""")
     resultat = cur.fetchall()
     r_final = []
@@ -264,31 +280,31 @@ def check_ref_in_devis(reference):
 
 
 def update_devis_details(ref, qte, prix, id_det):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""UPDATE devis_details SET 
-        reference = ?,
-        qte = ?,
-        prix = ?,
+        reference = %s,
+        qte = %s,
+        prix = %s,
           
-        WHERE id = ?""", (ref, qte, prix, id_det))
+        WHERE id = %s""", (ref, qte, prix, id_det))
     conn.commit()
     conn.close()
 
 
 def update_devis(montant, remise, note_bene, delai, point_liv, validite, paiement, objet, numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""UPDATE devis SET 
-        montant = ?,
-        remise = ?,
-        note_bene = ?,
-        delai = ?,
-        point_liv = ?,
-        validite = ?,
-        paiement = ?,
-        objet = ?
-        WHERE numero = ?""", (montant, remise, note_bene, delai, point_liv, validite, paiement, objet, numero))
+        montant = %s,
+        remise = %s,
+        note_bene = %s,
+        delai = %s,
+        point_liv = %s,
+        validite = %s,
+        paiement = %s,
+        objet = %s
+        WHERE numero = %s""", (montant, remise, note_bene, delai, point_liv, validite, paiement, objet, numero))
     conn.commit()
     conn.close()
 
@@ -296,7 +312,7 @@ def update_devis(montant, remise, note_bene, delai, point_liv, validite, paiemen
 def delete_devis_details(numero):
     con = sql.connect(my_base)
     cur = con.cursor()
-    cur.execute("""DELETE FROM devis_details WHERE numero = ?""", (numero, ))
+    cur.execute("""DELETE FROM devis_details WHERE numero = %s""", (numero, ))
     con.commit()
     con.close()
 
@@ -304,7 +320,7 @@ def delete_devis_details(numero):
 def delete_devis_details_by_numero(numero):
     con = sql.connect(my_base)
     cur = con.cursor()
-    cur.execute("""DELETE FROM devis_details WHERE numero = ?""", (numero, ))
+    cur.execute("""DELETE FROM devis_details WHERE numero = %s""", (numero, ))
     con.commit()
     con.close()
 
@@ -312,19 +328,19 @@ def delete_devis_details_by_numero(numero):
 def delete_devis(numero):
     con = sql.connect(my_base)
     cur = con.cursor()
-    cur.execute("""DELETE FROM devis WHERE numero = ?""", (numero, ))
+    cur.execute("""DELETE FROM devis WHERE numero = %s""", (numero, ))
     con.commit()
     con.close()
 
 
 def search_devis_details(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT id, reference, 
 
                     (SELECT designation FROM articles WHERE articles.reference = devis_details.reference) as designation,
 
-                    qte, prix FROM devis_details WHERE numero =?""", (numero,))
+                    qte, prix FROM devis_details WHERE numero =%s""", (numero,))
 
     resultat = cur.fetchall()
     r_final = []
@@ -340,9 +356,9 @@ def search_devis_details(numero):
 
 
 def all_devis_by_client_id(client_id):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT numero FROM devis WHERE client = ?""", (client_id,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT numero FROM devis WHERE client = %s""", (client_id,))
     res = cur.fetchall()
     conn.commit()
     conn.close()
@@ -350,19 +366,19 @@ def all_devis_by_client_id(client_id):
 
 
 def add_devis_details(numero, reference, qte, prix):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute(""" INSERT INTO devis_details values (?,?,?,?,?)""", (cur.lastrowid, numero, reference, qte, prix))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute(""" INSERT INTO devis_details values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, reference, qte, prix))
     conn.commit()
     conn.close()
 
 
 def show_info_devis(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(""" SELECT client, date, objet, montant, remise, montant_lettres, statut,
                     note_bene, delai, point_liv, validite, paiement
-                    FROM devis WHERE numero = ? """,
+                    FROM devis WHERE numero = %s """,
                 (numero,))
     resultat = cur.fetchone()
     final = {
@@ -376,13 +392,13 @@ def show_info_devis(numero):
 
 
 def find_devis_details(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
         """SELECT id, numero, reference, qte, prix,
         (SELECT designation FROM articles WHERE articles.reference = devis_details.reference) as designation,
         (SELECT unite FROM articles WHERE articles.reference = devis_details.reference) as unite
-        FROM devis_details WHERE numero=?
+        FROM devis_details WHERE numero=%s
         """,
         (numero,)
     )
@@ -397,8 +413,8 @@ def find_devis_details(numero):
 
 
 def all_devis():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
         """SELECT id, numero, date, client, montant, objet, remise, statut, note_bene, delai, point_liv, validite, paiement,
         (SELECT nom FROM clients WHERE clients.id = devis.client) as client_name, cree_par
@@ -416,12 +432,12 @@ def all_devis():
 
 
 def select_one_devis(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
         """SELECT id, numero, date, client, montant, objet, remise, statut, note_bene, delai, point_liv, validite, paiement,
         (SELECT nom FROM clients WHERE clients.id = devis.client) as client_name, cree_par
-        FROM devis WHERE numero = ? ORDER BY id DESC""", (numero,))
+        FROM devis WHERE numero = %s ORDER BY id DESC""", (numero,))
     resultat = cur.fetchone()
     final = {"id": resultat[0], "numero": resultat[1], "date": resultat[2], "client": resultat[13], "montant": resultat[4],
          "objet": resultat[5], "remise": resultat[6], "statut": resultat[7], "note_bene": resultat[8], "delai": resultat[9],
@@ -432,10 +448,10 @@ def select_one_devis(numero):
 
 
 def all_devis_rech(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     num = "%" + numero + "%"
-    cur.execute("""SELECT numero from devis WHERE numero LIKE ?""", (num,))
+    cur.execute("""SELECT numero from devis WHERE numero LIKE %s""", (num,))
     resultat = cur.fetchall()
     r_final = []
 
@@ -448,9 +464,9 @@ def all_devis_rech(numero):
 
 
 def search_statut_devis(devis_num):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT statut FROM devis WHERE numero = ?""", (devis_num,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT statut FROM devis WHERE numero = %s""", (devis_num,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -458,18 +474,18 @@ def search_statut_devis(devis_num):
 
 
 def maj_statut_devis(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""UPDATE devis set statut=? WHERE numero=?""", ("Facturé", numero))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""UPDATE devis set statut=%s WHERE numero=%s""", ("Facturé", numero))
     conn.commit()
     conn.close()
 
 
 # table clients _____________________________________________________________________________________
 def search_initiales(id_client: int):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT initiales FROM clients WHERE id = ?""", (id_client,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT initiales FROM clients WHERE id = %s""", (id_client,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -477,9 +493,9 @@ def search_initiales(id_client: int):
 
 
 def search_initiales_nom(nom: int):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT initiales FROM clients WHERE nom = ?""", (nom,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT initiales FROM clients WHERE nom = %s""", (nom,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -487,8 +503,8 @@ def search_initiales_nom(nom: int):
 
 
 def all_initiales():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT initiales FROM clients""")
     resultat = cur.fetchall()
     final = []
@@ -500,8 +516,8 @@ def all_initiales():
 
 
 def find_devis_num(id_client):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT * FROM devis""")
     resultat = cur.fetchall()
     this_year = f"{datetime.date.today().year}"
@@ -527,9 +543,9 @@ def find_devis_num(id_client):
 
 
 def id_client_by_name(nom):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT id FROM clients WHERE nom = ?""", (nom,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT id FROM clients WHERE nom = %s""", (nom,))
     result = cur.fetchone()
     conn.commit()
     conn.close()
@@ -537,17 +553,17 @@ def id_client_by_name(nom):
 
 
 def add_client(nom, ini, cont, nui, rc, mail, comm):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO clients values (?,?,?,?,?,?,?,?)""",
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO clients values (%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (cur.lastrowid, nom, ini, cont, nui, rc, mail, comm))
     conn.commit()
     conn.close()
 
 
 def all_clients():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT * FROM clients ORDER BY nom""")
     res = cur.fetchall()
     final = [
@@ -575,8 +591,8 @@ def recherche_initiales():
 
 def liste_clients():
     """all clients name"""
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT nom FROM clients""")
     resultat = cur.fetchall()
     r_final = []
@@ -589,9 +605,9 @@ def liste_clients():
 
 def infos_clients(id_client):
     """search infos client by id"""
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM clients WHERE id = ?""", (id_client,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM clients WHERE id = %s""", (id_client,))
     resultat = cur.fetchone()
     final = {"id": resultat[0], "nom": resultat[1], "initiales": resultat[2], "contact": resultat[3], "NUI": resultat[4], "RC": resultat[5],
          "courriel": resultat[6], "commercial": resultat[7]}
@@ -602,26 +618,26 @@ def infos_clients(id_client):
 
 def update_client(nom, ini, cont, nui, rc, mail, comm, id_client):
     """update a client"""
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""UPDATE clients SET 
-                    nom = ?,
-                    initiales = ?,
-                    contact = ?,
-                    NUI = ?,
-                    RC = ?,
-                    courriel = ?,
-                    commercial = ?
-                    WHERE id = ?""", (nom, ini, cont, nui, rc, mail, comm, id_client))
+                    nom = %s,
+                    initiales = %s,
+                    contact = %s,
+                    NUI = %s,
+                    RC = %s,
+                    courriel = %s,
+                    commercial = %s
+                    WHERE id = %s""", (nom, ini, cont, nui, rc, mail, comm, id_client))
     conn.commit()
     conn.close()
 
 
 def id_client_par_nom(nom_client):
     """ search id client by name"""
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT id FROM clients WHERE nom = ?""", (nom_client,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT id FROM clients WHERE nom = %s""", (nom_client,))
     res = cur.fetchone()
     conn.commit()
     conn.close()
@@ -629,9 +645,9 @@ def id_client_par_nom(nom_client):
 
 
 def infos_clients_par_id(id_client):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM clients WHERE id = ?""", (id_client,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM clients WHERE id = %s""", (id_client,))
     res = cur.fetchone()
     conn.commit()
     conn.close()
@@ -641,26 +657,26 @@ def infos_clients_par_id(id_client):
 # table factures _____________________________________________________________________
 def add_facture(numero, client, montant, objet, remise, montant_lettres, devis, bc_client, ov, delai):
     today = datetime.date.today()
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""INSERT INTO factures values 
-                    (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (cur.lastrowid, numero, today, client, montant, objet, remise, montant_lettres, devis, bc_client, ov, delai))
     conn.commit()
     conn.close()
 
 
 def add_details_facture(numero, ref, qte, prix):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO facture_details values (?,?,?,?,?)""", (cur.lastrowid, numero, ref, qte, prix))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO facture_details values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, ref, qte, prix))
     conn.commit()
     conn.close()
 
 
 def nb_factures():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT id FROm factures ORDER BY id DESC""")
     resultat = cur.fetchone()
     conn.commit()
@@ -669,8 +685,8 @@ def nb_factures():
 
 
 def find_facture_num(id_client):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT * FROM factures""")
     resultat = cur.fetchall()
     this_year = f"{datetime.date.today().year}"
@@ -695,10 +711,10 @@ def find_facture_num(id_client):
 
 
 def all_factures_rech(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     num = "%" + numero + "%"
-    cur.execute("""SELECT numero from factures WHERE numero LIKE ?""", (num,))
+    cur.execute("""SELECT numero from factures WHERE numero LIKE %s""", (num,))
     resultat = cur.fetchall()
     r_final = []
 
@@ -711,10 +727,10 @@ def all_factures_rech(numero):
 
 
 def show_info_factures(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
-        """ SELECT client, date, objet, montant, remise, montant_lettres, bc_client, devis, ov FROM factures WHERE numero = ? """,
+        """ SELECT client, date, objet, montant, remise, montant_lettres, bc_client, devis, ov FROM factures WHERE numero = %s """,
         (numero,))
     resultat = cur.fetchone()
     final = {
@@ -727,13 +743,13 @@ def show_info_factures(numero):
 
 
 def all_factures_by_client_id(client_id):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
     """
             SELECT id, numero, date, client, montant, remise,
             (SELECT nom FROM clients WHERE factures.client = clients.id) as client_name
-            FROM factures WHERE client = ? 
+            FROM factures WHERE client = %s 
         """, (client_id,))
 
     res = cur.fetchall()
@@ -757,13 +773,13 @@ def all_factures_by_client_id(client_id):
 
 
 def search_factures_details(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT id, reference, 
 
                     (SELECT designation FROM articles WHERE articles.reference = facture_details.reference) as designation,
 
-                    qte, prix FROM facture_details WHERE numero =?""", (numero,))
+                    qte, prix FROM facture_details WHERE numero =%s""", (numero,))
 
     resultat = cur.fetchall()
     r_final = []
@@ -779,9 +795,9 @@ def search_factures_details(numero):
 
 
 def find_montant_facture(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT montant FROM factures WHERE numero =?""", (numero,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT montant FROM factures WHERE numero =%s""", (numero,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -789,9 +805,9 @@ def find_montant_facture(numero):
 
 
 def mt_deja_paye(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT sum(montant) FROM reglement WHERE facture = ?""", (numero,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT sum(montant) FROM reglement WHERE facture = %s""", (numero,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -799,10 +815,10 @@ def mt_deja_paye(numero):
 
 
 def add_reglement(facture, montant, typp, date):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
-        """INSERT INTO reglement values (?,?,?,?,?)""",
+        """INSERT INTO reglement values (%s,%s,%s,%s,%s)""",
         (cur.lastrowid, facture, montant,
          typp, date)
     )
@@ -811,8 +827,8 @@ def add_reglement(facture, montant, typp, date):
 
 
 def all_factures():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""
         SELECT id, numero, client, montant, objet, remise, devis, bc_client, ov, delai,
         (SELECT nom FROM clients WHERE clients.id = factures.client) as nom_client
@@ -832,8 +848,8 @@ def all_factures():
 
 
 # def add_paiement():
-#     conn = sql.connect(my_base)
-#     cur = conn.cursor()
+#     conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+#     cur = conn.cursor(buffered=True)
 #     cur.execute(
 #         """
 #         INSERT INTO r
@@ -845,13 +861,13 @@ def all_factures():
 
 
 def factures_client(id_client):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT id, numero, montant, 
 
                     (select sum(montant) FROM reglement WHERE reglement.facture = factures.numero) as percu
 
-                    FROM factures WHERE client =?""", (id_client,))
+                    FROM factures WHERE client =%s""", (id_client,))
 
     resultat = cur.fetchall()
 
@@ -878,14 +894,14 @@ def factures_client(id_client):
 
 
 def factures_details(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""
         SELECT id, reference, 
         (SELECT designation FROM articles WHERE articles.reference = facture_details.reference) as designation,
         qte, prix,
         (SELECT unite FROM articles WHERE articles.reference = facture_details.reference) as unite
-         FROM facture_details WHERE numero =?""", (numero,)
+         FROM facture_details WHERE numero =%s""", (numero,)
     )
     resultat = cur.fetchall()
     final = [
@@ -902,9 +918,9 @@ def factures_details(numero):
 
 # table articles
 def search_designation(reference):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT designation, prix FROM articles WHERE reference = ?""", (reference,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT designation, prix FROM articles WHERE reference = %s""", (reference,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -912,9 +928,9 @@ def search_designation(reference):
 
 
 def search_infos_desig(designation):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM articles WHERE designation = ?""", (designation,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM articles WHERE designation = %s""", (designation,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -922,8 +938,8 @@ def search_infos_desig(designation):
 
 
 def all_references():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT * FROM articles ORDER BY reference""")
     resultat = cur.fetchall()
     r_final = [
@@ -938,8 +954,8 @@ def all_references():
 
 
 def all_ref_and_desig():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT reference, designation FROM articles ORDER BY reference""")
     resultat = cur.fetchall()
     conn.commit()
@@ -948,9 +964,9 @@ def all_ref_and_desig():
 
 
 def all_reglements_by_facture(facture):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM reglement WHERE facture = ?""", (facture,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM reglement WHERE facture = %s""", (facture,))
     resultat = cur.fetchall()
     final = [
         {"montant": data[2], "type": data[3], "date": data[4]}
@@ -963,9 +979,9 @@ def all_reglements_by_facture(facture):
 
 def all_references_stock():
     nature = "stock"
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT reference FROM articles WHERE nature = ? """, (nature, ))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT reference FROM articles WHERE nature = %s """, (nature, ))
     resultat = cur.fetchall()
     r_final = []
     for row in resultat:
@@ -976,8 +992,8 @@ def all_references_stock():
 
 
 def all_articles():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT * FROM articles""")
     resultat = cur.fetchall()
     conn.commit()
@@ -986,9 +1002,9 @@ def all_articles():
 
 
 def find_stock_ref(ref):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT qté FROM articles WHERE reference =?""", (ref,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT qté FROM articles WHERE reference =%s""", (ref,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -996,9 +1012,9 @@ def find_stock_ref(ref):
 
 
 def find_prix_ref(ref):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT prix FROM articles WHERE reference =?""", (ref,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT prix FROM articles WHERE reference =%s""", (ref,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1006,9 +1022,9 @@ def find_prix_ref(ref):
 
 
 def find_nature_ref(ref):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT nature FROM articles WHERE reference =?""", (ref,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT nature FROM articles WHERE reference =%s""", (ref,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1017,9 +1033,9 @@ def find_nature_ref(ref):
 
 def filtrer_articles(designation, nature):
     des = "%" + designation + "%"
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM articles WHERE designation LIKE ? AND nature=?""", (des, nature))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM articles WHERE designation LIKE %s AND nature=%s""", (des, nature))
     resultat = cur.fetchall()
     conn.commit()
     conn.close()
@@ -1027,25 +1043,25 @@ def filtrer_articles(designation, nature):
 
 
 def add_ref(ref, des, nat, unite):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO articles values (?,?,?,?,?,?,?)""", (cur.lastrowid, ref, des, nat, 0, 0, unite))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO articles values (%s,%s,%s,%s,%s,%s,%s)""", (cur.lastrowid, ref, des, nat, 0, 0, unite))
     conn.commit()
     conn.close()
 
 
 def update_stock(qte, ref):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""UPDATE articles SET qté = ? WHERE reference = ?""", (qte, ref))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""UPDATE articles SET qté = %s WHERE reference = %s""", (qte, ref))
     conn.commit()
     conn.close()
 
 
 def all_infos_ref(reference):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT designation, nature, qté FROM articles WHERE reference =? """, (reference,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT designation, nature, qté FROM articles WHERE reference =%s """, (reference,))
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1053,9 +1069,9 @@ def all_infos_ref(reference):
 
 
 def look_unit(ref):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT unite FROM articles WHERE reference=?""", (ref,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT unite FROM articles WHERE reference=%s""", (ref,))
     res = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1064,9 +1080,9 @@ def look_unit(ref):
 
 def search_ref_id(reference):
     """chercher l'id d'une référence à partir de la référence"""
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT id FROM articles WHERE reference = ?""", (reference, ))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT id FROM articles WHERE reference = %s""", (reference, ))
     result = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1075,8 +1091,8 @@ def search_ref_id(reference):
 
 def find_unique_ref():
     """ verifier l'unicité d'une référence"""
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT reference FROM articles""")
     result = cur.fetchall()
     final = []
@@ -1089,26 +1105,26 @@ def find_unique_ref():
 
 def update_ref_by_name(designation, ref_id):
     """ update reference and designation by id ref"""
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("UPDATE articles SET designation = ? WHERE id = ?", (designation, ref_id))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("UPDATE articles SET designation = %s WHERE id = %s", (designation, ref_id))
     conn.commit()
     conn.close()
 
 
 def update_prix_by_ref(prix, ref):
     """ update reference and prix by id ref"""
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("UPDATE articles SET prix = ? WHERE reference = ?", (prix, ref))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("UPDATE articles SET prix = %s WHERE reference = %s", (prix, ref))
     conn.commit()
     conn.close()
 
 
 # tables utilisateurs
 def check_login(login, passw):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT * from utilisateurs""")
     resultat = cur.fetchall()
     final = [
@@ -1124,8 +1140,8 @@ def check_login(login, passw):
 
 
 def all_users():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT * from utilisateurs""")
     resultat = cur.fetchall()
     final = [
@@ -1141,10 +1157,10 @@ def all_users():
 
 
 def add_user(nom, prenom, email, niveau, poste):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
-        "INSERT INTO utilisateurs values (?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO utilisateurs values (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
         (cur.lastrowid, "", "", nom, prenom, email, "nouveau".upper(), niveau, poste)
     )
     conn.commit()
@@ -1152,9 +1168,9 @@ def add_user(nom, prenom, email, niveau, poste):
 
 
 def search_user_infos(login):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM utilisateurs WHERE login = ?""", (login,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM utilisateurs WHERE login = %s""", (login,))
     resultat = cur.fetchone()
     final = {
             "id": resultat[0], "login": resultat[1], "pass": resultat[2], "nom": resultat[3], "prenom": resultat[4], "email": resultat[5],
@@ -1166,9 +1182,9 @@ def search_user_infos(login):
 
 
 def search_user_by_mail(email):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM utilisateurs WHERE email = ?""", (email,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM utilisateurs WHERE email = %s""", (email,))
     resultat = cur.fetchone()
     final = {
             "id": resultat[0], "login": resultat[1], "pass": resultat[2], "nom": resultat[3], "prenom": resultat[4], "email": resultat[5],
@@ -1180,120 +1196,77 @@ def search_user_by_mail(email):
 
 
 def make_user_new(login, password, email):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
         """UPDATE utilisateurs SET 
-        login = ?,
-        pass = ?,
-        statut =?
-        WHERE email = ?""", (login, password, "ACTIF", email)
+        login = %s,
+        pass = %s,
+        statut =%s
+        WHERE email = %s""", (login, password, "ACTIF", email)
     )
     conn.commit()
     conn.close()
 
 
 def desactivate_user(email):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
         """UPDATE utilisateurs SET 
-        login = ?,
-        pass = ?,
-        statut =?
-        WHERE email = ?""", ("", "", "INACTIF", email)
+        login = %s,
+        pass = %s,
+        statut =%s
+        WHERE email = %s""", ("", "", "INACTIF", email)
     )
     conn.commit()
     conn.close()
 
 
 def delete_user(email):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
-        "DELETE FROM utlisateurs WHERE  email =?", (email,)
+        "DELETE FROM utlisateurs WHERE  email =%s", (email,)
     )
     conn.commit()
     conn.close()
 
 
 def reactivate_user(email):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
         """UPDATE utilisateurs SET 
-        login = ?,
-        pass = ?,
-        statut =?
-        WHERE email = ?""", ("", "", "NOUVEAU", email)
+        login = %s,
+        pass = %s,
+        statut =%s
+        WHERE email = %s""", ("", "", "NOUVEAU", email)
     )
     conn.commit()
     conn.close()
 
-# def check_user(login: str):
-#     conn = sql.connect(my_base)
-#     cur = conn.cursor()
-#     cur.execute("""SELECT login FROM utilisateurs""")
-#     resultat = cur.fetchall()
-#     conn.commit()
-#     conn.close()
-#     counter = 0
-#
-#     for item in resultat:
-#         if item[0] == login:
-#             counter += 1
-#
-#     if counter > 0:
-#         return True
-#     else:
-#         return False
-
-
-def find_user_password(login):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT pass from utilisateurs WHERE login = ?""", (login,))
-    resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return resultat[0]
-
 
 # table bordereau details
 def add_bordereau(numero, devis, bc_client):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO bordereau values (?,?,?,?,?)""", (cur.lastrowid, numero, devis, bc_client, str(datetime.date.today())))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO bordereau values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, devis, bc_client, str(datetime.date.today())))
     conn.commit()
     conn.close()
 
 
 def add_bordereau_details(numero, ref, qte, prix):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO bordereau_details values (?,?,?,?,?)""", (cur.lastrowid, numero, ref, qte, prix))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO bordereau_details values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, ref, qte, prix))
     conn.commit()
     conn.close()
-
-
-def all_bordereaux():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT numero FROM bordereau""")
-    resultat = cur.fetchall()
-    r_final = []
-
-    for row in resultat:
-        r_final.append(row[0])
-
-    conn.commit()
-    conn.close()
-    return r_final
 
 
 def find_bordereau_num(id_client):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT * FROM bordereau ORDER BY id DESC""")
     resultat = cur.fetchall()
     this_year = f"{datetime.date.today().year}"
@@ -1319,9 +1292,9 @@ def find_bordereau_num(id_client):
 
 
 def search_bordereau_by_facture(facture):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM bordereau WHERE facture = ?""", (facture,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM bordereau WHERE facture = %s""", (facture,))
     resultat = cur.fetchone()
     final = {"id": resultat[0], "numero": resultat[1], "facture": resultat[2], "bc_client": resultat[3]}
     conn.commit()
@@ -1329,29 +1302,19 @@ def search_bordereau_by_facture(facture):
     return final
 
 
-def verif_bordereau(devis):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT numero FROM bordereau WHERE devis =?""", (devis,))
-    res = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return res[0]
-
-
 # table historique
 def add_historique(ref, typp, num, qte_av, qte, qte_ap):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO historique values (?,?,?,?,?,?,?,?)""",
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO historique values (%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (cur.lastrowid, ref, str(datetime.datetime.now().strftime("%d/%m/%Y")), typp, num, qte_av, qte, qte_ap))
     conn.commit()
     conn.close()
 
 
 def find_histo_num():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT id FROM historique ORDER by id  DESC""")
     resultat = cur.fetchone()
 
@@ -1367,9 +1330,9 @@ def find_histo_num():
 
 
 def all_historique_by_ref(reference):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM historique WHERE reference = ?""", (reference,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM historique WHERE reference = %s""", (reference,))
     result = cur.fetchall()
     final = [
         {"id": data[0], "reference": data[1], "date": data[2], "mouvement": data[3], "num_mvt": data[4], "qte_avant": data[5], "qte_mvt": data[6], "qte_apres": data[7]}
@@ -1381,8 +1344,8 @@ def all_historique_by_ref(reference):
 
 
 def all_historique():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT * FROM historique""")
     result = cur.fetchall()
     conn.commit()
@@ -1411,7 +1374,7 @@ def generate_achat_num():
 def maj_prix_ref(prix, reference):
     con = sql.connect(my_base)
     cur = con.cursor()
-    cur.execute("""UPDATE articles SET prix = ? WHERE reference = ? """, (prix, reference))
+    cur.execute("""UPDATE articles SET prix = %s WHERE reference = %s """, (prix, reference))
     con.commit()
     con.close()
 
@@ -1419,24 +1382,24 @@ def maj_prix_ref(prix, reference):
 def delete_ref(reference):
     con = sql.connect(my_base)
     cur = con.cursor()
-    cur.execute("""DELETE FROM articles WHERE reference = ? """, (reference,))
+    cur.execute("""DELETE FROM articles WHERE reference = %s """, (reference,))
     con.commit()
     con.close()
 
 
 # table fournisseurs __________________________________________________________________
 def add_fournisseur(nom, initiales, contact, nui, rc, courriel, commercial):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO fournisseurs values (?,?,?,?,?,?,?,?)""", (cur.lastrowid, nom, initiales, contact, nui, rc, courriel, commercial))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO fournisseurs values (%s,%s,%s,%s,%s,%s,%s,%s)""", (cur.lastrowid, nom, initiales, contact, nui, rc, courriel, commercial))
     conn.commit()
     conn.close()
 
 
 def infos_fournisseur_by_name(nom):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM fournisseurs WHERE nom = ?""", (nom,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM fournisseurs WHERE nom = %s""", (nom,))
     result = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1444,9 +1407,9 @@ def infos_fournisseur_by_name(nom):
 
 
 def infos_fournisseur_by_id(id_fournisseur):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM fournisseurs WHERE id = ?""", (id_fournisseur,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM fournisseurs WHERE id = %s""", (id_fournisseur,))
     result = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1454,8 +1417,8 @@ def infos_fournisseur_by_id(id_fournisseur):
 
 
 def all_fournisseurs():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT * FROM fournisseurs""")
     result = cur.fetchall()
     final = [
@@ -1469,8 +1432,8 @@ def all_fournisseurs():
 
 
 def all_fournisseur_name():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT nom FROM fournisseurs""")
     result = cur.fetchall()
     final = []
@@ -1482,8 +1445,8 @@ def all_fournisseur_name():
 
 
 def all_initiales_fournisseurs():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT initiales FROM fournisseurs""")
     result = cur.fetchall()
     final = []
@@ -1495,24 +1458,24 @@ def all_initiales_fournisseurs():
 
 
 def update_fournisseur_by_id(nom, initiales, contact, nui, rc, courriel, comm, id_foun):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""UPDATE fournisseurs SET
-                nom = ?,
-                initiales = ?,
-                contact = ?,
-                NUI = ?,
-                RC = ?,
-                courriel = ?,
-                commercial = ? WHERE id = ?""", (nom, initiales, contact, nui, rc, courriel, comm, id_foun))
+                nom = %s,
+                initiales = %s,
+                contact = %s,
+                NUI = %s,
+                RC = %s,
+                courriel = %s,
+                commercial = %s WHERE id = %s""", (nom, initiales, contact, nui, rc, courriel, comm, id_foun))
     conn.commit()
     conn.close()
 
 
 def delete_fournisseurs_by_id(id_fournisseur):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""DELETE FROM fournisseurs WHERE id = ?""", (id_fournisseur, ))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""DELETE FROM fournisseurs WHERE id = %s""", (id_fournisseur, ))
     conn.commit()
     conn.close()
 
@@ -1520,71 +1483,71 @@ def delete_fournisseurs_by_id(id_fournisseur):
 # Table commandes t details commandes _____________________________________________________________________________________
 def add_commande(numero, date, fournisseur_id, montant, montant_lettres):
     statut = "en cours"
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO commandes values (?,?,?,?,?,?,?)""", (cur.lastrowid, numero, date, fournisseur_id, montant, montant_lettres, statut))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO commandes values (%s,%s,%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, date, fournisseur_id, montant, montant_lettres, statut))
     conn.commit()
     conn.close()
 
 
 def add_commande_detail(numero, reference, qte, prix):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO commande_details values (?,?,?,?,?)""", (cur.lastrowid, numero, reference, qte, prix))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO commande_details values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, reference, qte, prix))
     conn.commit()
     conn.close()
 
 
 def update_commande(montant, montant_lettres, statut, numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""UPDATE commande SET
-                montant = ?,
-                montant_lettres = ?,
-                statut = ? WHERE numero = ?""", (montant, montant_lettres, statut, numero))
+                montant = %s,
+                montant_lettres = %s,
+                statut = %s WHERE numero = %s""", (montant, montant_lettres, statut, numero))
     conn.commit()
     conn.close()
 
 
 def update_commande_statut(statut, numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""UPDATE commandes SET statut = ? WHERE numero = ?""", (statut, numero))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""UPDATE commandes SET statut = %s WHERE numero = %s""", (statut, numero))
     conn.commit()
     conn.close()
 
 
 def update_commande_details(reference, qte, prix, numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""UPDATE commande_details SET
-                reference = ?,
-                qte = ?,
-                prix = ? WHERE numero = ?""", (reference, qte, prix, numero))
+                reference = %s,
+                qte = %s,
+                prix = %s WHERE numero = %s""", (reference, qte, prix, numero))
     conn.commit()
     conn.close()
 
 
 def delete_commade(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""DELETE FROM commandes WHERE numero = ?""", (numero,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""DELETE FROM commandes WHERE numero = %s""", (numero,))
     conn.commit()
     conn.close()
 
 
 def delete_commande_details(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""DELETE FROM commende_details WHERE numero = ?""", (numero,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""DELETE FROM commende_details WHERE numero = %s""", (numero,))
     conn.commit()
     conn.close()
 
 
 def show_commande_details(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM commande_details WHERE numero = ?""", (numero,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM commande_details WHERE numero = %s""", (numero,))
     result = cur.fetchall()
     conn.commit()
     conn.close()
@@ -1592,8 +1555,8 @@ def show_commande_details(numero):
 
 
 def all_commandes():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
         """SELECT id, numero,
         date,
@@ -1613,13 +1576,13 @@ def all_commandes():
 
 
 def all_commandes_by_fournisseur_id(fourn_id):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute(
         """SELECT id, numero,
         date,
         (SELECT nom FROM fournisseurs WHERE fournisseurs.id = commandes.fournisseur) as fournisseur_name,
-        montant, statut FROM commandes WHERE fournisseur = ?""", (fourn_id,)
+        montant, statut FROM commandes WHERE fournisseur = %s""", (fourn_id,)
     )
     result = cur.fetchall()
     final = [
@@ -1634,8 +1597,8 @@ def all_commandes_by_fournisseur_id(fourn_id):
 
 
 def list_commandes():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT numero FROM commandes""")
     result = cur.fetchall()
     final = []
@@ -1647,9 +1610,9 @@ def list_commandes():
 
 
 def show_infos_commandes(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM commandes WHERE numero = ?""", (numero,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT * FROM commandes WHERE numero = %s""", (numero,))
     result = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1657,9 +1620,9 @@ def show_infos_commandes(numero):
 
 
 def nb_commandes_by_fournisseur(id_fournisseur):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT count(id) FROM commandes WHERE fournisseur =?""", (id_fournisseur, ))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT count(id) FROM commandes WHERE fournisseur =%s""", (id_fournisseur, ))
     result = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1681,17 +1644,17 @@ def create_numero_commande(id_fournisseur):
 
 
 def update_state_command(statut, numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""UPDATE commandes SET statut = ? WHERE numero = ?""", (statut, numero))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""UPDATE commandes SET statut = %s WHERE numero = %s""", (statut, numero))
     conn.commit()
     conn.close()
 
 
 def commande_details_by_num(numero):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT reference, qte, prix FROM commande_details WHERE numero = ?""", (numero,))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT reference, qte, prix FROM commande_details WHERE numero = %s""", (numero,))
     result = cur.fetchall()
     conn.commit()
     conn.close()
@@ -1699,8 +1662,8 @@ def commande_details_by_num(numero):
 
 
 def all_commande_details():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT numero, reference, qte, prix FROM commande_details""")
     result = cur.fetchall()
     conn.commit()
@@ -1710,25 +1673,25 @@ def all_commande_details():
 
 # table receptions ___________________________________________________________________________
 def add_reception(numero, bl_client, commande, date):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO receptions values (?,?,?,?,?)""", (cur.lastrowid, numero, bl_client, commande, date))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO receptions values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, bl_client, commande, date))
     conn.commit()
     conn.close()
 
 
 def add_reception_details(numero, ref, qte, prix):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""INSERT INTO reception_details values (?,?,?,?,?)""", (cur.lastrowid, numero, ref, qte, prix))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""INSERT INTO reception_details values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, ref, qte, prix))
     conn.commit()
     conn.close()
 
 
 def find_recept_num_by_command(command):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT numero, date FROM receptions WHERE = ?""", (command, ))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT numero, date FROM receptions WHERE = %s""", (command, ))
     result = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1736,9 +1699,9 @@ def find_recept_num_by_command(command):
 
 
 def montant_paiements_par_facture(facture_num):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT sum(montant) FROM reglement WHERE facture =?""", (facture_num, ))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT sum(montant) FROM reglement WHERE facture =%s""", (facture_num, ))
     res = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1746,9 +1709,9 @@ def montant_paiements_par_facture(facture_num):
 
 
 def reglements_par_facture(facture_num):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT montant, type, date FROM reglement WHERE facture =?""", (facture_num, ))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT montant, type, date FROM reglement WHERE facture =%s""", (facture_num, ))
     res = cur.fetchall()
     conn.commit()
     conn.close()
@@ -1756,9 +1719,9 @@ def reglements_par_facture(facture_num):
 
 
 def find_bc_by_devis(devis):
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT bc_client FROM factures WHERE devis = ?""", (devis, ))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT bc_client FROM factures WHERE devis = %s""", (devis, ))
     res = cur.fetchone()
     conn.commit()
     conn.close()
@@ -1766,9 +1729,9 @@ def find_bc_by_devis(devis):
 
 
 def delais_by_numero():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
-    cur.execute("""SELECT numero, date, validite FROM devis WHERE statut = ?""", ("Non facturé", ))
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
+    cur.execute("""SELECT numero, date, validite FROM devis WHERE statut = %s""", ("Non facturé", ))
     res = cur.fetchall()
 
     intermediaire = []
@@ -1796,8 +1759,8 @@ def delais_by_numero():
 
 
 def delais_by_factures():
-    conn = sql.connect(my_base)
-    cur = conn.cursor()
+    conn = mc.connect(host=hostname, user=db_user, passwd=password, database=dbname, port=port)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT numero, date, 
                     (SELECT sum(montant) FROM reglement WHERE reglement.facture = factures.numero) as total_regle,
                     delai, montant FROM factures""")
@@ -1839,14 +1802,6 @@ def delais_by_factures():
     conn.close()
     return final
 
-
-
-# def func():
-#     conn = sql.connect(my_base)
-#     cur = conn.cursor()
-#     cur.execute("""""")
-#     conn.commit()
-#     conn.close()
 
 
 
