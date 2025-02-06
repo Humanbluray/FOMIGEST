@@ -8,7 +8,7 @@ load_dotenv()
 hostname = os.environ.get("MYSQLHOST")
 db_user = os.environ.get("MYSQLUSER")
 password = os.environ.get("MYSQLPASSWORD")
-dbname = os.environ.get("DBNAME")
+dbname = os.environ.get("MYSQLDATABASE")
 port = os.environ.get("MYSQLPORT")
 
 # my_base = "facturier.db"
