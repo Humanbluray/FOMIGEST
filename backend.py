@@ -5,13 +5,13 @@ import mysql.connector as mc
 from dotenv import load_dotenv
 
 load_dotenv()
-hostname = os.environ.get("HOSTNAME")
-db_user = os.environ.get("DB_USER")
-password = os.environ.get("PASSWORD")
+hostname = os.environ.get("MYSQLHOST")
+db_user = os.environ.get("MYSQLUSER")
+password = os.environ.get("MYSQLPASSWORD")
 dbname = os.environ.get("DBNAME")
-port = os.environ.get("PORT")
+port = os.environ.get("MYSQLPORT")
 
-my_base = "facturier.db"
+# my_base = "facturier.db"
 INITIALES = "FMD"
 
 
