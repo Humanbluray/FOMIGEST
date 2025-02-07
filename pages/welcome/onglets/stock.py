@@ -424,6 +424,10 @@ class Stock(ft.Container):
                     widget.value = None
                     widget.update()
 
+                self.load_datas()
+                self.table.update()
+                self.results.update()
+
         else:
             self.cp.box.title.value = "Erreur"
             self.cp.box.content.value = "Tous les champs sont obligatoires"

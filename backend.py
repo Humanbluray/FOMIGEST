@@ -133,8 +133,9 @@ def connexion_base():
                         qte_mvt   INTEGER,
                         qte_apres INTEGER)""")
 
-        cur.execute("""CREATE TABLE IF NOT EXISTS achats (
+        cur.execute("""CREATE TABLE IF NOT EXISTS achats_backup (
                         id              INTEGER PRIMARY KEY AUTO_INCREMENT,
+                        numero          TEXT,
                         reference       TEXT,
                         designation     TEXT,
                         qte             INTEGER,
@@ -231,7 +232,7 @@ def add_achat(numero, ref, des, qte, prix, commentaire):
     conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
     cur = conn.cursor(buffered=True)
     cur.execute(
-        "INSERT INTO achats values (%s,%s,%s,%s,%s,%s,%s,%s)",
+        "INSERT INTO achats_backup values (%s,%s,%s,%s,%s,%s,%s,%s)",
         (cur.lastrowid, numero, ref, des, qte, prix, commentaire, str(datetime.datetime.now().strftime("%d/%m/%Y")))
     )
     conn.commit()
@@ -242,7 +243,7 @@ def find_numero_acaht():
     conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
     cur = conn.cursor(buffered=True)
     cur.execute(
-        "SELECT count(id) FROM achats"
+        "SELECT count(id) FROM achats_backup"
     )
     result = cur.fetchone()
 
@@ -1356,7 +1357,7 @@ def all_historique():
 def nb_achats():
     conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
     cur = conn.cursor(buffered=True)
-    cur.execute("""SELECT count(id) FROM achats""")
+    cur.execute("""SELECT count(id) FROM achats_backup""")
     resultat = cur.fetchone()
     conn.commit()
     conn.close()
