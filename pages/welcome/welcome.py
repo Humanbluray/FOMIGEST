@@ -10,7 +10,7 @@ class Welcome(ft.View):
         super().__init__(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             route=f"/welcome/{user_infos['username']}",
-            bgcolor="#f2f2f2"
+            bgcolor="#f2f2f2", padding=0
         )
         self.user_infos = user_infos
         self.page = page

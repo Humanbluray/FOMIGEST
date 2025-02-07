@@ -195,6 +195,9 @@ def connexion_base():
         print(f"{ex}")
 
 
+connexion_base()
+
+
 def all_activite_by_user(user):
     conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
     cur = conn.cursor(buffered=True)
