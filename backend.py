@@ -310,27 +310,27 @@ def update_devis(montant, remise, note_bene, delai, point_liv, validite, paiemen
 
 
 def delete_devis_details(numero):
-    con = sql.connect(my_base)
-    cur = con.cursor()
+    conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
+    cur = conn.cursor(buffered=True)
     cur.execute("""DELETE FROM devis_details WHERE numero = %s""", (numero, ))
-    con.commit()
-    con.close()
+    conn.commit()
+    conn.close()
 
 
 def delete_devis_details_by_numero(numero):
-    con = sql.connect(my_base)
-    cur = con.cursor()
+    conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
+    cur = conn.cursor(buffered=True)
     cur.execute("""DELETE FROM devis_details WHERE numero = %s""", (numero, ))
-    con.commit()
-    con.close()
+    conn.commit()
+    conn.close()
 
 
 def delete_devis(numero):
-    con = sql.connect(my_base)
-    cur = con.cursor()
+    conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
+    cur = conn.cursor(buffered=True)
     cur.execute("""DELETE FROM devis WHERE numero = %s""", (numero, ))
-    con.commit()
-    con.close()
+    conn.commit()
+    conn.close()
 
 
 def search_devis_details(numero):
@@ -492,7 +492,7 @@ def search_initiales(id_client: int):
     return resultat[0]
 
 
-def search_initiales_nom(nom: int):
+def search_initiales_nom(nom):
     conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
     cur = conn.cursor(buffered=True)
     cur.execute("""SELECT initiales FROM clients WHERE nom = %s""", (nom,))
@@ -577,15 +577,15 @@ def all_clients():
 
 
 def recherche_initiales():
-    con = sql.connect(my_base)
-    cur = con.cursor()
+    conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT initiales FROM clients""")
     resultat = cur.fetchall()
     r_final = []
     for row in resultat:
         r_final.append(row[0])
-    con.commit()
-    con.close()
+    conn.commit()
+    conn.close()
     return r_final
 
 
@@ -1354,12 +1354,12 @@ def all_historique():
 
 
 def nb_achats():
-    con = sql.connect(my_base)
-    cur = con.cursor()
+    conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
+    cur = conn.cursor(buffered=True)
     cur.execute("""SELECT count(id) FROM achats""")
     resultat = cur.fetchone()
-    con.commit()
-    con.close()
+    conn.commit()
+    conn.close()
     if resultat[0] is None:
         return 0
     else:
@@ -1372,19 +1372,19 @@ def generate_achat_num():
 
 
 def maj_prix_ref(prix, reference):
-    con = sql.connect(my_base)
-    cur = con.cursor()
+    conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
+    cur = conn.cursor(buffered=True)
     cur.execute("""UPDATE articles SET prix = %s WHERE reference = %s """, (prix, reference))
-    con.commit()
-    con.close()
+    conn.commit()
+    conn.close()
 
 
 def delete_ref(reference):
-    con = sql.connect(my_base)
-    cur = con.cursor()
+    conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
+    cur = conn.cursor(buffered=True)
     cur.execute("""DELETE FROM articles WHERE reference = %s """, (reference,))
-    con.commit()
-    con.close()
+    conn.commit()
+    conn.close()
 
 
 # table fournisseurs __________________________________________________________________
