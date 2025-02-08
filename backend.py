@@ -126,7 +126,7 @@ def connexion_base():
         cur.execute("""CREATE TABLE IF NOT EXISTS historique (
                         id        INTEGER PRIMARY KEY AUTO_INCREMENT,
                         reference TEXT,
-                        date      DATE,
+                        date      TEXT,
                         mouvement TEXT,
                         num_mvt   TEXT,
                         qte_avant INTEGER,
@@ -196,7 +196,19 @@ def connexion_base():
         print(f"{ex}")
 
 
-connexion_base()
+# connexion_base()
+
+def supp_table():
+    conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
+    cur = conn.cursor(buffered=True)
+    cur.execute(
+        "DROP TABLE historique"
+    )
+    conn.commit()
+    conn.close()
+
+
+# supp_table()
 
 
 def all_activite_by_user(user):
@@ -662,7 +674,7 @@ def add_facture(numero, client, montant, objet, remise, montant_lettres, devis, 
     cur = conn.cursor(buffered=True)
     cur.execute("""INSERT INTO factures values 
                     (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                (cur.lastrowid, numero, today, client, montant, objet, remise, montant_lettres, devis, bc_client, ov, delai))
+                (cur.lastrowid, numero, str(today), client, montant, objet, remise, montant_lettres, devis, bc_client, ov, delai))
     conn.commit()
     conn.close()
 
@@ -1307,8 +1319,9 @@ def search_bordereau_by_facture(facture):
 def add_historique(ref, typp, num, qte_av, qte, qte_ap):
     conn = mc.connect(host=MYSQLHOST, user=MYSQLUSER, passwd=MYSQLPASSWORD, database=MYSQLDATABASE, port=MYSQLPORT)
     cur = conn.cursor(buffered=True)
+    today = str(datetime.datetime.now().strftime("%d/%m/%Y"))
     cur.execute("""INSERT INTO historique values (%s,%s,%s,%s,%s,%s,%s,%s)""",
-                (cur.lastrowid, ref, str(datetime.datetime.now().strftime("%d/%m/%Y")), typp, num, qte_av, qte, qte_ap))
+                (cur.lastrowid, ref, today, typp, num, qte_av, qte, qte_ap))
     conn.commit()
     conn.close()
 
