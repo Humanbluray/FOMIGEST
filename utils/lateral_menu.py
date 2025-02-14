@@ -95,7 +95,7 @@ class Menu(ft.Card):
 
         self.clients = ItemMenu("clients".upper(), ft.icons.GROUP_WORK_OUTLINED, self.color_icon, self.color_text)
         self.fournisseurs = ItemMenu("Prestataires".upper(), ft.icons.GROUPS_2_OUTLINED, self.color_icon, self.color_text)
-        self.stock = ItemMenu("stock".upper(), ft.icons.HOME_OUTLINED, self.color_icon, self.color_text)
+        self.stock = ItemMenu("stock".upper(), ft.icons.HOUSE_SIDING, self.color_icon, self.color_text)
         self.commandes = ItemMenu("commandes".upper(), ft.icons.BOOKMARK_BORDER_OUTLINED, self.color_icon, self.color_text)
         self.devis = ItemMenu("devis".upper(), ft.icons.MONETIZATION_ON_OUTLINED, self.color_icon, self.color_text)
         self.factures = ItemMenu("factures".upper(), ft.icons.PAYMENTS_OUTLINED, self.color_icon, self.color_text)

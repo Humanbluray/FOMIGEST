@@ -1316,7 +1316,7 @@ class Devis(ft.Container):
             # table facture
             be.add_facture(
                 numero_facture, info_facture["client"], info_facture["montant"], info_facture["objet"], info_facture["remise"], "",
-                self.fac_num_devis.value, self.bc_client.value, self.ov_client.value, info_facture["paiement"])
+                self.fac_num_devis.value, self.bc_client.value, self.ov_client.value, 0)
 
             be.add_activity(self.cp.user_infos["userlogin"], f"Facturation du devis {self.fac_num_devis.value}".upper())
 
@@ -1446,7 +1446,7 @@ class Devis(ft.Container):
                     cell1 = main_table.cell(0, 0)
                     num_proforma = self.edit_num.value
                     suivant = "Suivant proforma N°"
-                    date = be.show_info_devis(num_proforma)["date"]
+                    date = str(be.show_info_devis(num_proforma)["date"])
 
                     table1 = cell1.add_table(rows=4, cols=1)  # Tableau avec 4 lignes et 1 colonne
                     cell1_1 = table1.cell(0, 0)

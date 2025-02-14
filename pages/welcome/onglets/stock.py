@@ -519,7 +519,7 @@ class Stock(ft.Container):
             )
             ancien_stock = int(self.achat_qte.value)
             new_stock = int(self.achat_qte_2.value)
-            ancien_prix = int(self.achat_prix.value)
+            ancien_prix = int(self.achat_prix.value.replace(" ", ""))
             new_prix = int(self.achat_prix_2.value)
             pmp = ((ancien_stock * ancien_prix) + (new_stock * new_prix)) / (new_stock + ancien_stock)
             print(ancien_stock, ancien_prix)
@@ -535,6 +535,7 @@ class Stock(ft.Container):
             self.cp.box.content.value = "Achat validé"
             self.cp.box.open = True
             self.cp.box.update()
+            print("ok")
 
             self.achat_qte_2.value = None
             self.achat_prix_2.value = None
