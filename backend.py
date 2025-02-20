@@ -1,9 +1,9 @@
-import sqlite3 as sql
 import datetime
 import os
 import mysql.connector as mc
 from dotenv import load_dotenv
 import psycopg2
+from psycopg2 import pool
 import openpyxl
 
 load_dotenv()
@@ -16,15 +16,31 @@ SUPA_HOST = os.getenv('SUPA_HOST')
 # my_base = "facturier.db"
 INITIALES = "FMD"
 
+# Créer un pool de connexions
+connection_pool = psycopg2.pool.SimpleConnectionPool(
+    1, 10,  # Min et max de connexions
+    host=SUPA_HOST,
+    user=SUPA_USER,
+    password=SUPA_PASSWORD,
+    database=SUPA_DATABASE,
+    port=SUPA_PORT
+)
+
+def get_db_connection():
+    return connection_pool.getconn()
+
+def release_db_connection(conn):
+    connection_pool.putconn(conn)
+
 
 def connexion_base():
     # create the database
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     # print('connexion etablie')
     cur = conn.cursor()
 
     try:
-    # devis
+        # devis
         cur.execute("""CREATE TABLE IF NOT EXISTS devis (
                         id              SERIAL PRIMARY KEY,
                         numero          TEXT,
@@ -213,7 +229,7 @@ def connexion_base():
 
 
 def all_activite_by_user(user):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         "SELECT * FROM activites WHERE username = %s ORDER by id DESC", (user,)
@@ -225,89 +241,61 @@ def all_activite_by_user(user):
         }
         for data in result
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def add_activity(user, activity,):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         "INSERT INTO activites (username, activity, hour) values (%s,%s,%s)",
         (user, activity, str(datetime.datetime.now().strftime("%d/%m/%Y - %H:%M:%S")))
     )
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def add_achat(numero, ref, des, qte, prix, commentaire):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         "INSERT INTO achats (numero, reference, designation, qte, prix, commentaire, date) values (%s,%s,%s,%s,%s,%s,%s)",
         (numero, ref, des, qte, prix, commentaire, str(datetime.datetime.now().strftime("%d/%m/%Y")))
     )
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def find_numero_acaht():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         "SELECT count(id) FROM achats"
     )
     result = cur.fetchone()
 
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return f"FMD/AD/{result[0] + 1}"
 
 
 # fonctions de la table devis et devis_details ___________________________________________________________
 def add_devis(numero, date, client, montant, objet, remise, montant_lettres, notabene, delai, point_liv, validite, paiement, username):
     status = "Non facturé"
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("""INSERT INTO devis (numero, date, client, montant, objet, remise, montant_lettres, statut, notabene, delai, point_liv, validite, paiement, cree_par, last_modif) 
+    cur.execute("""INSERT INTO devis (numero, date, client, montant, objet, remise, montant_lettres, statut, note_bene, delai, point_liv, validite, paiement, cree_par, last_modif) 
                         values  (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (numero, date, client, montant, objet, remise, montant_lettres, status, notabene, delai, point_liv, validite, paiement, username,
                  f"{username} - {str(datetime.datetime.now().strftime("%d/%m/%Y - %H:%M:%S"))}"))
-    conn.commit()
-    conn.close()
-
-
-def check_ref_in_devis(reference):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT reference FROM devis_details""")
-    resultat = cur.fetchall()
-    r_final = []
-
-    for row in resultat:
-        r_final.append(row[0])
-
-    conn.commit()
-    conn.close()
-    return True if reference in r_final else False
-
-
-def update_devis_details(ref, qte, prix, id_det):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""UPDATE devis_details SET 
-        reference = %s,
-        qte = %s,
-        prix = %s,
-          
-        WHERE id = %s""", (ref, qte, prix, id_det))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def update_devis(montant, remise, note_bene, delai, point_liv, validite, paiement, objet, numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE devis SET 
         montant = %s,
@@ -319,36 +307,36 @@ def update_devis(montant, remise, note_bene, delai, point_liv, validite, paiemen
         paiement = %s,
         objet = %s
         WHERE numero = %s""", (montant, remise, note_bene, delai, point_liv, validite, paiement, objet, numero))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def delete_devis_details(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""DELETE FROM devis_details WHERE numero = %s""", (numero, ))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def delete_devis_details_by_numero(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""DELETE FROM devis_details WHERE numero = %s""", (numero, ))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def delete_devis(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""DELETE FROM devis WHERE numero = %s""", (numero, ))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def search_devis_details(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT id, reference, 
 
@@ -364,31 +352,21 @@ def search_devis_details(numero):
         row = row + (total,)
         r_final.append(row)
 
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return r_final
 
 
-def all_devis_by_client_id(client_id):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT numero FROM devis WHERE client = %s""", (client_id,))
-    res = cur.fetchall()
-    conn.commit()
-    conn.close()
-    return res
-
-
 def add_devis_details(numero, reference, qte, prix):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(""" INSERT INTO devis_details (numero, reference, qte, prix) values (%s,%s,%s,%s)""", (numero, reference, qte, prix))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def show_info_devis(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(""" SELECT client, date, objet, montant, remise, montant_lettres, statut,
                     note_bene, delai, point_liv, validite, paiement
@@ -400,13 +378,13 @@ def show_info_devis(numero):
         "montant_lettres": resultat[5], "statut": resultat[6], "note_bene": resultat[7], "delai": resultat[8],
         "point_liv": resultat[9], "validite": resultat[10], "paiement": resultat[11]
     }
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def find_devis_details(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         """SELECT id, numero, reference, qte, prix,
@@ -421,13 +399,13 @@ def find_devis_details(numero):
         {"id": data[0], "numero": data[1], "reference": data[2], "qte": data[3], "prix": data[4], "designation": data[5], "unite": data[6]}
         for data in resultat
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def all_devis():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         """SELECT id, numero, date, client, montant, objet, remise, statut, note_bene, delai, point_liv, validite, paiement,
@@ -440,13 +418,13 @@ def all_devis():
          "objet": data[5], "remise": data[6], "statut": data[7], "note_bene": data[8], "delai": data[9],
          "point_liv": data[10], 'validité': data[11], "paiement": data[12], "username": data[14]} for data in resultat
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def select_one_devis(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         """SELECT id, numero, date, client, montant, objet, remise, statut, note_bene, delai, point_liv, validite, paiement,
@@ -456,81 +434,32 @@ def select_one_devis(numero):
     final = {"id": resultat[0], "numero": resultat[1], "date": resultat[2], "client": resultat[13], "montant": resultat[4],
          "objet": resultat[5], "remise": resultat[6], "statut": resultat[7], "note_bene": resultat[8], "delai": resultat[9],
          "point_liv": resultat[10], 'validite': resultat[11], "paiement": resultat[12], "cree_par": resultat[14]}
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
-def all_devis_rech(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    num = "%" + numero + "%"
-    cur.execute("""SELECT numero from devis WHERE numero LIKE %s""", (num,))
-    resultat = cur.fetchall()
-    r_final = []
-
-    for row in resultat:
-        r_final.append(row[0])
-
-    conn.commit()
-    conn.close()
-    return r_final
-
-
-def search_statut_devis(devis_num):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT statut FROM devis WHERE numero = %s""", (devis_num,))
-    resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return resultat[0]
-
-
 def maj_statut_devis(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE devis set statut=%s WHERE numero=%s""", ("Facturé", numero))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 # table clients _____________________________________________________________________________________
 def search_initiales(id_client: int):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT initiales FROM clients WHERE id = %s""", (id_client,))
     resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return resultat[0]
-
-
-def search_initiales_nom(nom):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT initiales FROM clients WHERE nom = %s""", (nom,))
-    resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return resultat[0]
-
-
-def all_initiales():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT initiales FROM clients""")
-    resultat = cur.fetchall()
-    final = []
-    for row in resultat:
-        final.append(row[0])
-    conn.commit()
-    conn.close()
-    return final
 
 
 def find_devis_num(id_client):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM devis""")
     resultat = cur.fetchall()
@@ -551,32 +480,32 @@ def find_devis_num(id_client):
         else:
             r_final = ini_cli + str(dev_num + 1) + "/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
 
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return r_final
 
 
 def id_client_by_name(nom):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT id FROM clients WHERE nom = %s""", (nom,))
     result = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return result[0]
 
 
 def add_client(nom, ini, cont, nui, rc, mail, comm):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""INSERT INTO clients (nom, initiales, contact, nui, rc, courriel, commercial) values (%s,%s,%s,%s,%s,%s,%s)""",
                 (nom, ini, cont, nui, rc, mail, comm))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def all_clients():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM clients ORDER BY nom""")
     res = cur.fetchall()
@@ -585,54 +514,40 @@ def all_clients():
          "courriel": data[6], "commercial": data[7]}
         for data in res
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def recherche_initiales():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT initiales FROM clients""")
     resultat = cur.fetchall()
     r_final = []
     for row in resultat:
         r_final.append(row[0])
-    conn.commit()
-    conn.close()
-    return r_final
-
-
-def liste_clients():
-    """all clients name"""
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT nom FROM clients""")
-    resultat = cur.fetchall()
-    r_final = []
-    for row in resultat:
-        r_final.append(row[0])
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return r_final
 
 
 def infos_clients(id_client):
     """search infos client by id"""
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM clients WHERE id = %s""", (id_client,))
     resultat = cur.fetchone()
     final = {"id": resultat[0], "nom": resultat[1], "initiales": resultat[2], "contact": resultat[3], "NUI": resultat[4], "RC": resultat[5],
          "courriel": resultat[6], "commercial": resultat[7]}
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def update_client(nom, ini, cont, nui, rc, mail, comm, id_client):
     """update a client"""
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE clients SET 
                     nom = %s,
@@ -643,63 +558,32 @@ def update_client(nom, ini, cont, nui, rc, mail, comm, id_client):
                     courriel = %s,
                     commercial = %s
                     WHERE id = %s""", (nom, ini, cont, nui, rc, mail, comm, id_client))
-    conn.commit()
-    conn.close()
-
-
-def id_client_par_nom(nom_client):
-    """ search id client by name"""
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT id FROM clients WHERE nom = %s""", (nom_client,))
-    res = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return res[0]
-
-
-def infos_clients_par_id(id_client):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM clients WHERE id = %s""", (id_client,))
-    res = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return res
+    cur.close()
+    release_db_connection(conn)
 
 
 # table factures _____________________________________________________________________
 def add_facture(numero, client, montant, objet, remise, montant_lettres, devis, bc_client, ov, delai):
     today = datetime.date.today()
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""INSERT INTO factures (numero, date, client, montant, objet, remise, montant_lettres, devis, bc_client, ov, delai) values 
                     (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (numero, today, client, montant, objet, remise, montant_lettres, devis, bc_client, ov, delai))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def add_details_facture(numero, ref, qte, prix):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("""INSERT INTO facture_details values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, ref, qte, prix))
-    conn.commit()
-    conn.close()
-
-
-def nb_factures():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT id FROm factures ORDER BY id DESC""")
-    resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return resultat[0]
+    cur.execute("""INSERT INTO facture_details (numero, reference, qte, prix) values (%s,%s,%s,%s)""", (numero, ref, qte, prix))
+    cur.close()
+    release_db_connection(conn)
 
 
 def find_facture_num(id_client):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM factures""")
     resultat = cur.fetchall()
@@ -719,29 +603,13 @@ def find_facture_num(id_client):
 
         else:
             r_final = ini_cli + str(fact_num + 1) + "/" + INITIALES + "/FA/" + f"{datetime.date.today().year}"
-    conn.commit()
-    conn.close()
-    return r_final
-
-
-def all_factures_rech(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    num = "%" + numero + "%"
-    cur.execute("""SELECT numero from factures WHERE numero LIKE %s""", (num,))
-    resultat = cur.fetchall()
-    r_final = []
-
-    for row in resultat:
-        r_final.append(row[0])
-
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return r_final
 
 
 def show_info_factures(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         """ SELECT client, date, objet, montant, remise, montant_lettres, bc_client, devis, ov FROM factures WHERE numero = %s """,
@@ -751,13 +619,13 @@ def show_info_factures(numero):
         "client": resultat[0], "date": resultat[1], "objet": resultat[2], "montant": resultat[3],
         "remise": resultat[4], "bc_client": resultat[6], "devis": resultat[7], "ov": resultat[8]
     }
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def all_factures_by_client_id(client_id):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
     """
@@ -781,66 +649,34 @@ def all_factures_by_client_id(client_id):
         else:
             data["statut"] = "en cours"
 
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
-def search_factures_details(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT id, reference, 
-
-                    (SELECT designation FROM articles WHERE articles.reference = facture_details.reference) as designation,
-
-                    qte, prix FROM facture_details WHERE numero =%s""", (numero,))
-
-    resultat = cur.fetchall()
-    r_final = []
-
-    for row in resultat:
-        total = row[3] * row[4]
-        row = row + (total,)
-        r_final.append(row)
-
-    conn.commit()
-    conn.close()
-    return r_final
-
-
-def find_montant_facture(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT montant FROM factures WHERE numero =%s""", (numero,))
-    resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return resultat[0]
-
-
 def mt_deja_paye(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT sum(montant) FROM reglement WHERE facture = %s""", (numero,))
     resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return resultat[0] if resultat[0] is not None else 0
 
 
 def add_reglement(facture, montant, typp, date):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         """INSERT INTO reglement (facture, montant, typp, date) values (%s,%s,%s,%s)""",
         (facture, montant,typp, date)
     )
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def all_factures():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
         SELECT id, numero, client, montant, objet, remise, devis, bc_client, ov, delai,
@@ -855,46 +691,13 @@ def all_factures():
           }
         for data in resultat
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
-def factures_client(id_client):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT id, numero, montant, 
-
-                    (select sum(montant) FROM reglement WHERE reglement.facture = factures.numero) as percu
-
-                    FROM factures WHERE client =%s""", (id_client,))
-
-    resultat = cur.fetchall()
-
-    r_final = []
-
-    for row in resultat:
-        if row[3] is not None:
-            reste = int(row[2]) - int(row[3])
-            if reste == 0:
-                statut = "réglée"
-            else:
-                statut = "en cours"
-            row = row + (reste, statut)
-            r_final.append(row)
-        else:
-            reste = row[2]
-            statut = "en cours"
-            row2 = (row[0], row[1], row[2], 0, reste, statut)
-            r_final.append(row2)
-
-    conn.commit()
-    conn.close()
-    return r_final
-
-
 def factures_details(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""
         SELECT id, reference, 
@@ -911,34 +714,24 @@ def factures_details(numero):
         }
         for data in resultat
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 # table articles
 def search_designation(reference):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT designation, prix FROM articles WHERE reference = %s""", (reference,))
     resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return resultat[0]
 
 
-def search_infos_desig(designation):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM articles WHERE designation = %s""", (designation,))
-    resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return resultat
-
-
 def all_references():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM articles ORDER BY reference""")
     resultat = cur.fetchall()
@@ -948,23 +741,13 @@ def all_references():
         }
         for data in resultat
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return r_final
 
 
-def all_ref_and_desig():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT reference, designation FROM articles ORDER BY reference""")
-    resultat = cur.fetchall()
-    conn.commit()
-    conn.close()
-    return resultat
-
-
 def all_reglements_by_facture(facture):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM reglement WHERE facture = %s""", (facture,))
     resultat = cur.fetchall()
@@ -972,159 +755,69 @@ def all_reglements_by_facture(facture):
         {"montant": data[2], "type": data[3], "date": data[4]}
         for data in resultat
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
-def all_references_stock():
-    nature = "stock"
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT reference FROM articles WHERE nature = %s """, (nature, ))
-    resultat = cur.fetchall()
-    r_final = []
-    for row in resultat:
-        r_final.append(row[0])
-    conn.commit()
-    conn.close()
-    return r_final
-
-
-def all_articles():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM articles""")
-    resultat = cur.fetchall()
-    conn.commit()
-    conn.close()
-    return resultat
-
-
 def find_stock_ref(ref):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT qté FROM articles WHERE reference =%s""", (ref,))
     resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return resultat[0]
-
-
-def find_prix_ref(ref):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT prix FROM articles WHERE reference =%s""", (ref,))
-    resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return resultat[0]
 
 
 def find_nature_ref(ref):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT nature FROM articles WHERE reference =%s""", (ref,))
     resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return resultat[0]
 
 
-def filtrer_articles(designation, nature):
-    des = "%" + designation + "%"
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT * FROM articles WHERE designation LIKE %s AND nature=%s""", (des, nature))
-    resultat = cur.fetchall()
-    conn.commit()
-    conn.close()
-    return resultat
-
-
 def add_ref(ref, des, nat, unite):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""INSERT INTO articles (reference, designation, nature, qté, prix, unite) values (%s,%s,%s,%s,%s,%s)""",
                 (ref, des, nat, 0, 0, unite))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def update_stock(qte, ref):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE articles SET qté = %s WHERE reference = %s""", (qte, ref))
-    conn.commit()
-    conn.close()
-
-
-def all_infos_ref(reference):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT designation, nature, qté FROM articles WHERE reference =%s """, (reference,))
-    resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return resultat
-
-
-def look_unit(ref):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT unite FROM articles WHERE reference=%s""", (ref,))
-    res = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return res[0]
-
-
-def search_ref_id(reference):
-    """chercher l'id d'une référence à partir de la référence"""
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT id FROM articles WHERE reference = %s""", (reference, ))
-    result = cur.fetchone()
-    conn.commit()
-    conn.close()
-    return result[0]
-
-
-def find_unique_ref():
-    """ verifier l'unicité d'une référence"""
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-    cur = conn.cursor()
-    cur.execute("""SELECT reference FROM articles""")
-    result = cur.fetchall()
-    final = []
-    for row in result:
-        final.append(row[0])
-    conn.commit()
-    conn.close()
-    return final
+    cur.close()
+    release_db_connection(conn)
 
 
 def update_ref_by_name(designation, ref_id):
     """ update reference and designation by id ref"""
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("UPDATE articles SET designation = %s WHERE id = %s", (designation, ref_id))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def update_prix_by_ref(prix, ref):
     """ update reference and prix by id ref"""
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("UPDATE articles SET prix = %s WHERE reference = %s", (prix, ref))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 # tables utilisateurs
 def check_login(login, passw):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * from utilisateurs""")
     resultat = cur.fetchall()
@@ -1135,13 +828,13 @@ def check_login(login, passw):
         for data in resultat
     ]
     user = {"login": login, "pass": passw}
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return True if user in final else False
 
 
 def all_users():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * from utilisateurs""")
     resultat = cur.fetchall()
@@ -1152,24 +845,24 @@ def all_users():
         }
         for data in resultat
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def add_user(nom, prenom, email, niveau, poste):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         "INSERT INTO utilisateurs (login, pass, nom, prenom, email, statut, niveau, poste) values (%s,%s,%s,%s,%s,%s,%s,%s)",
         ("", "", nom, prenom, email, "nouveau".upper(), niveau, poste)
     )
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def search_user_infos(login):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM utilisateurs WHERE login = %s""", (login,))
     resultat = cur.fetchone()
@@ -1177,13 +870,13 @@ def search_user_infos(login):
             "id": resultat[0], "login": resultat[1], "pass": resultat[2], "nom": resultat[3], "prenom": resultat[4], "email": resultat[5],
             "statut": resultat[6], "niveau": resultat[7], "poste": resultat[8]
         }
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def search_user_by_mail(email):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM utilisateurs WHERE email = %s""", (email,))
     resultat = cur.fetchone()
@@ -1191,13 +884,13 @@ def search_user_by_mail(email):
             "id": resultat[0], "login": resultat[1], "pass": resultat[2], "nom": resultat[3], "prenom": resultat[4], "email": resultat[5],
             "statut": resultat[6], "niveau": resultat[7], "poste": resultat[8]
         }
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def make_user_new(login, password, email):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         """UPDATE utilisateurs SET 
@@ -1206,12 +899,12 @@ def make_user_new(login, password, email):
         statut =%s
         WHERE email = %s""", (login, password, "ACTIF", email)
     )
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def desactivate_user(email):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         """UPDATE utilisateurs SET 
@@ -1220,22 +913,22 @@ def desactivate_user(email):
         statut =%s
         WHERE email = %s""", ("", "", "INACTIF", email)
     )
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def delete_user(email):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         "DELETE FROM utlisateurs WHERE  email =%s", (email,)
     )
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def reactivate_user(email):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         """UPDATE utilisateurs SET 
@@ -1244,29 +937,29 @@ def reactivate_user(email):
         statut =%s
         WHERE email = %s""", ("", "", "NOUVEAU", email)
     )
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 # table bordereau details
 def add_bordereau(numero, facture, bc_client):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""INSERT INTO bordereau (numero, facture, bc_client, date) values (%s,%s,%s,%s)""", (numero, facture, bc_client, str(datetime.date.today())))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def add_bordereau_details(numero, ref, qte, prix):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""INSERT INTO bordereau_details (numero, reference, qte, prix) values (%s,%s,%s,%s)""", (numero, ref, qte, prix))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def find_bordereau_num(id_client):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM bordereau ORDER BY id DESC""")
     resultat = cur.fetchall()
@@ -1287,35 +980,35 @@ def find_bordereau_num(id_client):
         else:
             r_final = ini_cli + str(bor_num + 1) + "/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
 
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return r_final
 
 
 def search_bordereau_by_facture(facture):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM bordereau WHERE facture = %s""", (facture,))
     resultat = cur.fetchone()
     final = {"id": resultat[0], "numero": resultat[1], "facture": resultat[2], "bc_client": resultat[3]}
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 # table historique
 def add_historique(ref, typp, num, qte_av, qte, qte_ap):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     today = str(datetime.datetime.now().strftime("%d/%m/%Y"))
     cur.execute("""INSERT INTO historique (reference, date, mouvement, num_mvt, qte_avant, qte_mvt, qte_apres) values (%s,%s,%s,%s,%s,%s,%s)""",
                 (ref, today, typp, num, qte_av, qte, qte_ap))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def find_histo_num():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT id FROM historique ORDER by id  DESC""")
     resultat = cur.fetchone()
@@ -1326,13 +1019,13 @@ def find_histo_num():
     else:
         numero = INITIALES + "/EN/" + str(resultat[0] + 1)
 
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return numero
 
 
 def all_historique_by_ref(reference):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM historique WHERE reference = %s""", (reference,))
     result = cur.fetchall()
@@ -1340,28 +1033,28 @@ def all_historique_by_ref(reference):
         {"id": data[0], "reference": data[1], "date": data[2], "mouvement": data[3], "num_mvt": data[4], "qte_avant": data[5], "qte_mvt": data[6], "qte_apres": data[7]}
         for data in result
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def all_historique():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM historique""")
     result = cur.fetchall()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return result
 
 
 def nb_achats():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT count(id) FROM achats""")
     resultat = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     if resultat[0] is None:
         return 0
     else:
@@ -1374,53 +1067,53 @@ def generate_achat_num():
 
 
 def maj_prix_ref(prix, reference):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE articles SET prix = %s WHERE reference = %s """, (prix, reference))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def delete_ref(reference):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""DELETE FROM articles WHERE reference = %s """, (reference,))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 # table fournisseurs __________________________________________________________________
 def add_fournisseur(nom, initiales, contact, nui, rc, courriel, commercial):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""INSERT INTO fournisseurs (nom, initiales, contact, nui, rc, courriel, commercial) values (%s,%s,%s,%s,%s,%s,%s)""",
                 (nom, initiales, contact, nui, rc, courriel, commercial))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def infos_fournisseur_by_name(nom):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM fournisseurs WHERE nom = %s""", (nom,))
     result = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return result
 
 
 def infos_fournisseur_by_id(id_fournisseur):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM fournisseurs WHERE id = %s""", (id_fournisseur,))
     result = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return result
 
 
 def all_fournisseurs():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM fournisseurs""")
     result = cur.fetchall()
@@ -1429,39 +1122,39 @@ def all_fournisseurs():
          "courriel": data[6], "commercial": data[7]}
         for data in result
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def all_fournisseur_name():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT nom FROM fournisseurs""")
     result = cur.fetchall()
     final = []
     for data in result:
         final.append(data[0])
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def all_initiales_fournisseurs():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT initiales FROM fournisseurs""")
     result = cur.fetchall()
     final = []
     for data in result:
         final.append(data[0])
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def update_fournisseur_by_id(nom, initiales, contact, nui, rc, courriel, comm, id_foun):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE fournisseurs SET
                 nom = %s,
@@ -1471,115 +1164,20 @@ def update_fournisseur_by_id(nom, initiales, contact, nui, rc, courriel, comm, i
                 RC = %s,
                 courriel = %s,
                 commercial = %s WHERE id = %s""", (nom, initiales, contact, nui, rc, courriel, comm, id_foun))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def delete_fournisseurs_by_id(id_fournisseur):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""DELETE FROM fournisseurs WHERE id = %s""", (id_fournisseur, ))
-    conn.commit()
-    conn.close()
-
-
-# Table commandes t details commandes _____________________________________________________________________________________
-# def add_commande(numero, date, fournisseur_id, montant, montant_lettres):
-#     statut = "en cours"
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-#     cur = conn.cursor()
-#     cur.execute("""INSERT INTO commandes values (%s,%s,%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, date, fournisseur_id, montant, montant_lettres, statut))
-#     conn.commit()
-#     conn.close()
-#
-#
-# def add_commande_detail(numero, reference, qte, prix):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-#     cur = conn.cursor()
-#     cur.execute("""INSERT INTO commande_details values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, reference, qte, prix))
-#     conn.commit()
-#     conn.close()
-
-
-# def update_commande(montant, montant_lettres, statut, numero):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-#     cur = conn.cursor()
-#     cur.execute("""UPDATE commande SET
-#                 montant = %s,
-#                 montant_lettres = %s,
-#                 statut = %s WHERE numero = %s""", (montant, montant_lettres, statut, numero))
-#     conn.commit()
-#     conn.close()
-
-#
-# def update_commande_statut(statut, numero):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-#     cur = conn.cursor()
-#     cur.execute("""UPDATE commandes SET statut = %s WHERE numero = %s""", (statut, numero))
-#     conn.commit()
-#     conn.close()
-#
-#
-# def update_commande_details(reference, qte, prix, numero):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-#     cur = conn.cursor()
-#     cur.execute("""UPDATE commande_details SET
-#                 reference = %s,
-#                 qte = %s,
-#                 prix = %s WHERE numero = %s""", (reference, qte, prix, numero))
-#     conn.commit()
-#     conn.close()
-
-
-# def delete_commade(numero):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-#     cur = conn.cursor()
-#     cur.execute("""DELETE FROM commandes WHERE numero = %s""", (numero,))
-#     conn.commit()
-#     conn.close()
-#
-#
-# def delete_commande_details(numero):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-#     cur = conn.cursor()
-#     cur.execute("""DELETE FROM commende_details WHERE numero = %s""", (numero,))
-#     conn.commit()
-#     conn.close()
-
-
-# def show_commande_details(numero):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-#     cur = conn.cursor()
-#     cur.execute("""SELECT * FROM commande_details WHERE numero = %s""", (numero,))
-#     result = cur.fetchall()
-#     conn.commit()
-#     conn.close()
-#     return result
-#
-#
-# def all_commandes():
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
-#     cur = conn.cursor()
-#     cur.execute(
-#         """SELECT id, numero,
-#         date,
-#         (SELECT nom FROM fournisseurs WHERE fournisseurs.id = commandes.fournisseur) as fournisseur_name,
-#         montant, statut FROM commandes"""
-#     )
-#     result = cur.fetchall()
-#     final = [
-#         {
-#             "id":data[0], "numero":data[1], "date":data[2], "founisseur":data[3], "montant":data[4]
-#         }
-#         for data in result
-#     ]
-#     conn.commit()
-#     conn.close()
-#     return final
+    cur.close()
+    release_db_connection(conn)
 
 
 def all_commandes_by_fournisseur_id(fourn_id):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
         """SELECT id, numero,
@@ -1594,41 +1192,41 @@ def all_commandes_by_fournisseur_id(fourn_id):
         }
         for data in result
     ]
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def list_commandes():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT numero FROM commandes""")
     result = cur.fetchall()
     final = []
     for row in result:
         final.append(row[0])
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return final
 
 
 def show_infos_commandes(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT * FROM commandes WHERE numero = %s""", (numero,))
     result = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return result
 
 
 def nb_commandes_by_fournisseur(id_fournisseur):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT count(id) FROM commandes WHERE fournisseur =%s""", (id_fournisseur, ))
     result = cur.fetchone()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return result[0]
 
 
@@ -1647,36 +1245,36 @@ def create_numero_commande(id_fournisseur):
 
 
 def update_state_command(statut, numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE commandes SET statut = %s WHERE numero = %s""", (statut, numero))
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
 
 
 def commande_details_by_num(numero):
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT reference, qte, prix FROM commande_details WHERE numero = %s""", (numero,))
     result = cur.fetchall()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return result
 
 
 def all_commande_details():
-    conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+    conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""SELECT numero, reference, qte, prix FROM commande_details""")
     result = cur.fetchall()
-    conn.commit()
-    conn.close()
+    cur.close()
+    release_db_connection(conn)
     return result
 
 
 # table receptions ___________________________________________________________________________
 # def add_reception(numero, bl_client, commande, date):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+#     conn = get_db_connection()
 #     cur = conn.cursor()
 #     cur.execute("""INSERT INTO receptions values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, bl_client, commande, date))
 #     conn.commit()
@@ -1684,7 +1282,7 @@ def all_commande_details():
 #
 #
 # def add_reception_details(numero, ref, qte, prix):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+#     conn = get_db_connection()
 #     cur = conn.cursor()
 #     cur.execute("""INSERT INTO reception_details values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, ref, qte, prix))
 #     conn.commit()
@@ -1692,7 +1290,7 @@ def all_commande_details():
 
 
 # def find_recept_num_by_command(command):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+#     conn = get_db_connection()
 #     cur = conn.cursor()
 #     cur.execute("""SELECT numero, date FROM receptions WHERE = %s""", (command, ))
 #     result = cur.fetchone()
@@ -1702,7 +1300,7 @@ def all_commande_details():
 #
 #
 # def montant_paiements_par_facture(facture_num):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+#     conn = get_db_connection()
 #     cur = conn.cursor()
 #     cur.execute("""SELECT sum(montant) FROM reglement WHERE facture =%s""", (facture_num, ))
 #     res = cur.fetchone()
@@ -1712,7 +1310,7 @@ def all_commande_details():
 
 
 # def reglements_par_facture(facture_num):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+#     conn = get_db_connection()
 #     cur = conn.cursor()
 #     cur.execute("""SELECT montant, type, date FROM reglement WHERE facture =%s""", (facture_num, ))
 #     res = cur.fetchall()
@@ -1722,7 +1320,7 @@ def all_commande_details():
 
 
 # def find_bc_by_devis(devis):
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+#     conn = get_db_connection()
 #     cur = conn.cursor()
 #     cur.execute("""SELECT bc_client FROM factures WHERE devis = %s""", (devis, ))
 #     res = cur.fetchone()
@@ -1732,7 +1330,7 @@ def all_commande_details():
 #
 #
 # def delais_by_numero():
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+#     conn = get_db_connection()
 #     cur = conn.cursor()
 #     cur.execute("""SELECT numero, date, validite FROM devis WHERE statut = %s""", ("Non facturé", ))
 #     res = cur.fetchall()
@@ -1762,7 +1360,7 @@ def all_commande_details():
 
 #
 # def delais_by_factures():
-#     conn = psycopg2.connect(host=SUPA_HOST, user=SUPA_USER, password=SUPA_PASSWORD, database=SUPA_DATABASE, port=SUPA_PORT)
+#     conn = get_db_connection()
 #     cur = conn.cursor()
 #     cur.execute("""SELECT numero, date,
 #                     (SELECT sum(montant) FROM reglement WHERE reglement.facture = factures.numero) as total_regle,
@@ -1816,7 +1414,99 @@ def all_commande_details():
 #     count += 1
 #     print(count)
 
+# Table commandes t details commandes _____________________________________________________________________________________
+# def add_commande(numero, date, fournisseur_id, montant, montant_lettres):
+#     statut = "en cours"
+#     conn = get_db_connection()
+#     cur = conn.cursor()
+#     cur.execute("""INSERT INTO commandes values (%s,%s,%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, date, fournisseur_id, montant, montant_lettres, statut))
+#     conn.commit()
+#     conn.close()
+#
+#
+# def add_commande_detail(numero, reference, qte, prix):
+#     conn = get_db_connection()
+#     cur = conn.cursor()
+#     cur.execute("""INSERT INTO commande_details values (%s,%s,%s,%s,%s)""", (cur.lastrowid, numero, reference, qte, prix))
+#     conn.commit()
+#     conn.close()
 
+
+# def update_commande(montant, montant_lettres, statut, numero):
+#     conn = get_db_connection()
+#     cur = conn.cursor()
+#     cur.execute("""UPDATE commande SET
+#                 montant = %s,
+#                 montant_lettres = %s,
+#                 statut = %s WHERE numero = %s""", (montant, montant_lettres, statut, numero))
+#     conn.commit()
+#     conn.close()
+
+#
+# def update_commande_statut(statut, numero):
+#     conn = get_db_connection()
+#     cur = conn.cursor()
+#     cur.execute("""UPDATE commandes SET statut = %s WHERE numero = %s""", (statut, numero))
+#     conn.commit()
+#     conn.close()
+#
+#
+# def update_commande_details(reference, qte, prix, numero):
+#     conn = get_db_connection()
+#     cur = conn.cursor()
+#     cur.execute("""UPDATE commande_details SET
+#                 reference = %s,
+#                 qte = %s,
+#                 prix = %s WHERE numero = %s""", (reference, qte, prix, numero))
+#     conn.commit()
+#     conn.close()
+
+
+# def delete_commade(numero):
+#     conn = get_db_connection()
+#     cur = conn.cursor()
+#     cur.execute("""DELETE FROM commandes WHERE numero = %s""", (numero,))
+#     conn.commit()
+#     conn.close()
+#
+#
+# def delete_commande_details(numero):
+#     conn = get_db_connection()
+#     cur = conn.cursor()
+#     cur.execute("""DELETE FROM commende_details WHERE numero = %s""", (numero,))
+#     conn.commit()
+#     conn.close()
+
+
+# def show_commande_details(numero):
+#     conn = get_db_connection()
+#     cur = conn.cursor()
+#     cur.execute("""SELECT * FROM commande_details WHERE numero = %s""", (numero,))
+#     result = cur.fetchall()
+#     conn.commit()
+#     conn.close()
+#     return result
+#
+#
+# def all_commandes():
+#     conn = get_db_connection()
+#     cur = conn.cursor()
+#     cur.execute(
+#         """SELECT id, numero,
+#         date,
+#         (SELECT nom FROM fournisseurs WHERE fournisseurs.id = commandes.fournisseur) as fournisseur_name,
+#         montant, statut FROM commandes"""
+#     )
+#     result = cur.fetchall()
+#     final = [
+#         {
+#             "id":data[0], "numero":data[1], "date":data[2], "founisseur":data[3], "montant":data[4]
+#         }
+#         for data in result
+#     ]
+#     conn.commit()
+#     conn.close()
+#     return final
 
 
 

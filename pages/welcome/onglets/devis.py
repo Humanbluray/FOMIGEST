@@ -1,4 +1,5 @@
 from utils import *
+from decimal import Decimal
 import flet as ft
 import backend as be
 from utils.useful_functions import ajout_separateur, ecrire_en_lettres, ecrire_date
@@ -21,9 +22,6 @@ url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 supabase = create_client(url, key)
 
-FOOTER_URl = "https://byggqnusosovxulbchup.supabase.co/storage/v1/object/public/logos//footer.png"
-HEARDER_URL = "https://byggqnusosovxulbchup.supabase.co/storage/v1/object/public/logos//header.png"
-BUCKET_DEVIS = "devis"
 
 class OneArticle(ft.Container):
     def __init__(self, cp: object, ref: str, des: str, prix: int):
@@ -1328,7 +1326,7 @@ class Devis(ft.Container):
                     ancien_stock = be.find_stock_ref(row["reference"])
                     nouveau_stock = ancien_stock - row["qte"]
                     be.update_stock(nouveau_stock, row["reference"])
-                    be.add_historique(row[2], "S", numero_facture, ancien_stock, row["qte"], nouveau_stock)
+                    be.add_historique(row["reference"], "S", numero_facture, ancien_stock, row["qte"], nouveau_stock)
 
             # mise à jour du statut du devis
             be.maj_statut_devis(self.fac_num_devis.value)
@@ -1690,7 +1688,7 @@ class Devis(ft.Container):
                         if int(self.edit_remise.value) == 0:
                             mt_taxe = int(mt_total * TVA_VALUE)
                             mt_ttc = mt_total + mt_taxe
-                            mt_ir = int(mt_total * IR_VALUE[regime])
+                            mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_ttc - mt_ir
 
                             draw_simple_paragraph(
@@ -1728,7 +1726,7 @@ class Devis(ft.Container):
                             mt_remise = mt_total - rem
                             mt_taxe = int(mt_remise * TVA_VALUE)
                             mt_ttc = mt_remise + mt_taxe
-                            mt_ir = int(mt_total * IR_VALUE[regime])
+                            mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_ttc - mt_ir
 
                             draw_simple_paragraph(
@@ -1774,7 +1772,7 @@ class Devis(ft.Container):
 
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
-                            mt_ir = int(mt_total*IR_VALUE[regime])
+                            mt_ir = int(mt_total*Decimal(IR_VALUE[regime]))
                             mt_nap = int(mt_total - mt_ir)
                             draw_simple_paragraph(
                                 f"IR:    {ajout_separateur(mt_ir)}",
@@ -1798,7 +1796,7 @@ class Devis(ft.Container):
                         # Si la remise est non nulle
                         else:
                             mt_remise = be.show_info_devis(self.edit_num.value)['montant']
-                            mt_ir = int(mt_remise * IR_VALUE[regime])
+                            mt_ir = int(mt_remise * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_remise - mt_ir
                             draw_simple_paragraph(
                                 f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,

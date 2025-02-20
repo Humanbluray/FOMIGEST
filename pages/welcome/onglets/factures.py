@@ -1,4 +1,5 @@
 from utils import *
+from decimal import Decimal
 import flet as ft
 import backend as be
 import datetime
@@ -20,11 +21,6 @@ load_dotenv()
 url = os.environ.get("SUPABASE_URL")
 key = os.environ.get("SUPABASE_KEY")
 supabase = create_client(url, key)
-
-BUCKET_FACTURE = "factures"
-BUCKET_BORDEREAU = "bordereaux"
-FOOTER_URl = "https://byggqnusosovxulbchup.supabase.co/storage/v1/object/public/logos//footer.png"
-HEARDER_URL = "https://byggqnusosovxulbchup.supabase.co/storage/v1/object/public/logos//header.png"
 
 
 class OneArticle(ft.Container):
@@ -1090,7 +1086,7 @@ class Factures(ft.Container):
                         if int(self.edit_remise.value) == 0:
                             mt_taxe = int(mt_total * TVA_VALUE)
                             mt_ttc = mt_total + mt_taxe
-                            mt_ir = int(mt_total * IR_VALUE[regime])
+                            mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_ttc - mt_ir
 
                             draw_simple_paragraph(
@@ -1128,7 +1124,7 @@ class Factures(ft.Container):
                             mt_remise = mt_total - rem
                             mt_taxe = int(mt_remise * TVA_VALUE)
                             mt_ttc = mt_remise + mt_taxe
-                            mt_ir = int(mt_total * IR_VALUE[regime])
+                            mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_ttc - mt_ir
 
                             draw_simple_paragraph(
@@ -1198,7 +1194,7 @@ class Factures(ft.Container):
                         # Si la remise est non nulle
                         else:
                             mt_remise = be.show_info_devis(self.edit_num.value)['montant']
-                            mt_ir = int(mt_remise * IR_VALUE[regime])
+                            mt_ir = int(mt_remise * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_remise - mt_ir
                             draw_simple_paragraph(
                                 f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,
@@ -1774,7 +1770,7 @@ class Factures(ft.Container):
                         if int(self.edit_remise.value) == 0:
                             mt_taxe = int(mt_total * TVA_VALUE)
                             mt_ttc = mt_total + mt_taxe
-                            mt_ir = int(mt_total * IR_VALUE[regime])
+                            mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_ttc - mt_ir
 
                             draw_simple_paragraph(
@@ -1812,7 +1808,7 @@ class Factures(ft.Container):
                             mt_remise = mt_total - rem
                             mt_taxe = int(mt_remise * TVA_VALUE)
                             mt_ttc = mt_remise + mt_taxe
-                            mt_ir = int(mt_total * IR_VALUE[regime])
+                            mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_ttc - mt_ir
 
                             draw_simple_paragraph(
@@ -1882,7 +1878,7 @@ class Factures(ft.Container):
                         # Si la remise est non nulle
                         else:
                             mt_remise = be.show_info_devis(self.edit_num.value)['montant']
-                            mt_ir = int(mt_remise * IR_VALUE[regime])
+                            mt_ir = int(mt_remise * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_remise - mt_ir
                             draw_simple_paragraph(
                                 f"Remise:    {self.edit_remise.value} %", WD_PARAGRAPH_ALIGNMENT.RIGHT, 1, 1,

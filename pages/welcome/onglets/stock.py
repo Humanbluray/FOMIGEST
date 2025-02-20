@@ -521,7 +521,7 @@ class Stock(ft.Container):
             new_stock = int(self.achat_qte_2.value)
             ancien_prix = int(self.achat_prix.value.replace(" ", ""))
             new_prix = int(self.achat_prix_2.value)
-            pmp = ((ancien_stock * ancien_prix) + (new_stock * new_prix)) / (new_stock + ancien_stock)
+            pmp = int(((ancien_stock * ancien_prix) + (new_stock * new_prix)) / (new_stock + ancien_stock))
             print(ancien_stock, ancien_prix)
             print(new_stock, new_prix)
             # mise à jour de la qte et du prix

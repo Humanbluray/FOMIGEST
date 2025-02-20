@@ -17,45 +17,25 @@ def main(page: ft.Page):
         "Poppins ExtraBold": "fonts/Poppins-ExtraBold.ttf",
         "Poppins Light": "fonts/Poppins-Light.ttf",
     }
-    page.theme = ft.Theme(font_family="Poppins-Medium")
+    page.theme = ft.Theme(font_family="Poppins Medium")
 
-    # Gérer les changements de route
+    # Cache des vues pour éviter de les recréer à chaque navigation
+    views_cache = {
+        "/": Landing(page),
+        "/welcome": Welcome(page),
+        "/first_login": FirstLogin(page)
+    }
+
     def route_change(event: ft.RouteChangeEvent):
-        # initial route ...
         page.views.clear()
-        page.views.append(Landing(page))
+        if event.route in views_cache:
+            page.views.append(views_cache[event.route])
+        else:
+            page.views.append(ft.View(controls=[ft.Text("Page non trouvée", size=34)]))
         page.update()
 
-        if page.route == "/":
-            page.views.append(Landing(page))
-            page.update()
-
-        if page.route == f"/welcome/{user_infos['username']}":
-            if user_infos["status"]:
-                page.views.append(Welcome(page))
-            else:
-                page.views.append(Landing(page))
-            page.update()
-
-        if page.route == f"/first_login":
-            page.views.append(FirstLogin(page))
-            page.update()
-
-    page.update()
-
-    # Gérer la navigation "retour"
-    def view_pop(view):
-        page.views.pop()
-        top_view = page.views[-1]
-        page.go(top_view.route)
-
-    # Assignation des callbacks
     page.on_route_change = route_change
-    page.on_view_pop = view_pop
-
-    # Naviguer vers la route initiale
     page.go(page.route)
-
 
 
 if __name__ == '__main__':

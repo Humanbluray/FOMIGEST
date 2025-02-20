@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: fomiderc-app
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python main.py"
+    region: frankfurt  # Choisis une région proche (frankfurt, par exemple)
