@@ -128,15 +128,12 @@ class AnyButton(ft.ElevatedButton):
             style=ft.ButtonStyle(
                 shape=ft.RoundedRectangleBorder(radius=12)
             ),
-            # scale=ft.transform.Scale(1),
-            # animate_scale=ft.animation.Animation(300, ft.AnimationCurve.FAST_OUT_SLOWIN),
+            scale=ft.transform.Scale(1),
+            animate_scale=ft.animation.Animation(300, ft.AnimationCurve.EASE_IN_OUT),
             content=ft.Row(
                 controls=[
-                    # ft.Icon(my_icon, color=text_color, size=20),
                     ft.Text(
                         title, size=12, font_family="Poppins Medium", color=text_color,
-                        scale=ft.transform.Scale(1),
-                        animate_scale=ft.animation.Animation(300, ft.AnimationCurve.FAST_OUT_SLOWIN),
                     )
                 ], alignment=ft.MainAxisAlignment.CENTER, spacing=3
             ),
@@ -145,11 +142,11 @@ class AnyButton(ft.ElevatedButton):
 
     def hover_bt(self, e):
         if e.data == "true":
-            self.content.controls[0].scale = 1.1
-            self.content.update()
+            self.scale = 1.1
+            self.update()
         else:
-            self.content.controls[0].scale = 1
-            self.content.update()
+            self.scale = 1
+            self.update()
 
 
 class CtButton(ft.Container):

@@ -423,7 +423,7 @@ class Clients(ft.Container):
                 self.edit_name.value, self.edit_ini.value, self.edit_contact.value, self.edit_nui.value,
                 self.edit_rc.value, self.edit_courriel.value, self.edit_commercial.value, int(self.edit_id.value)
             )
-            be.add_activity(self.cp.user_infos["userlogin"], f"Modification du client {self.edit_name.value}")
+            be.add_activity(self.cp.utilisateur["userlogin"], f"Modification du client {self.edit_name.value}")
             self.cp.box.title.value = "Validé"
             self.cp.box.content.value = "Client modifié"
             self.cp.box.open = True
@@ -454,7 +454,7 @@ class Clients(ft.Container):
                     self.new_name.value, self.new_ini.value, self.new_contact.value, self.new_nui.value,
                     self.new_rc.value, self.new_courriel.value, self.new_commercial.value,
                 )
-                be.add_activity(self.cp.user_infos["userlogin"], f"Création du client {self.new_name.value}")
+                be.add_activity(self.cp.utilisateur["userlogin"], f"Création du client {self.new_name.value}")
                 self.cp.box.title.value = "Validé"
                 self.cp.box.content.value = "Nouveau client créé"
                 self.cp.box.open = True

@@ -613,7 +613,7 @@ class Factures(ft.Container):
             be.add_reglement(
                 self.pay_facture.value, int(self.pay_a_regler.value), self.pay_mode.value, self.pay_selected_date.value
             )
-            be.add_activity(self.cp.user_infos["userlogin"], f"Paiement de la facture {self.pay_facture.value}".upper())
+            be.add_activity(self.cp.utilisateur["userlogin"], f"Paiement de la facture {self.pay_facture.value}".upper())
             self.cp.box.title.value = "Confirmé"
             self.cp.box.content.value = "Paiement sauvegardé"
             self.cp.box.open = True
