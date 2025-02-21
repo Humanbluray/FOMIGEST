@@ -22,16 +22,22 @@ def main(page: ft.Page):
     # Cache des vues pour éviter de les recréer à chaque navigation
     views_cache = {
         "/": Landing(page),
-        "/welcome": Welcome(page),
+        f"/welcome/{user_infos['usernom']}": Welcome(page, user_infos),
         "/first_login": FirstLogin(page)
     }
 
     def route_change(event: ft.RouteChangeEvent):
-        page.views.clear()
-        if event.route in views_cache:
+        if event.route.startswith("/welcome/"):
+            username = event.route.split("/")[2]  # Extraire le username depuis l'URL
+            user_infos["usernom"] = username  # Mettre à jour les infos utilisateur
+            page.views.append(Welcome(page, user_infos))
+
+        elif event.route in views_cache:
             page.views.append(views_cache[event.route])
+
         else:
             page.views.append(ft.View(controls=[ft.Text("Page non trouvée", size=34)]))
+
         page.update()
 
     page.on_route_change = route_change

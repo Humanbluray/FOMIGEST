@@ -6,13 +6,13 @@ from pages.landing.landing import user_infos
 
 
 class Welcome(ft.View):
-    def __init__(self, page):
+    def __init__(self, page, utilisateur: dict):
         super().__init__(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            route=f"/welcome/{user_infos['username']}",
+            route=f"/welcome/{utilisateur['usernom']}",
             bgcolor="#f2f2f2", padding=0
         )
-        self.user_infos = user_infos
+        self.utilisateur = user_infos
         self.page = page
         self.menu = Menu(self, page)
         self.barre = ft.Container(

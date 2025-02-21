@@ -84,7 +84,7 @@ class Landing(ft.View):
                 user_infos["userlevel"] = details["niveau"]
                 user_infos["userlogin"] = details["login"]
                 user_infos["status"] = True
-                self.page.go(f"/welcome/{user_infos['username']}")
+                self.page.go(f"/welcome/{user_infos['usernom']}")
                 be.add_activity(user_infos["userlogin"], "Connexion".upper())
                 time.sleep(10)
                 user_infos["status"] = False
