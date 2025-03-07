@@ -34,9 +34,7 @@ def release_db_connection(conn):
 
 
 def connexion_base():
-    # create the database
     conn = get_db_connection()
-    # print('connexion etablie')
     cur = conn.cursor()
 
     try:
@@ -241,6 +239,7 @@ def all_activite_by_user(user):
         }
         for data in result
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -253,6 +252,7 @@ def add_activity(user, activity,):
         "INSERT INTO activites (username, activity, hour) values (%s,%s,%s)",
         (user, activity, str(datetime.datetime.now().strftime("%d/%m/%Y - %H:%M:%S")))
     )
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -264,6 +264,7 @@ def add_achat(numero, ref, des, qte, prix, commentaire):
         "INSERT INTO achats (numero, reference, designation, qte, prix, commentaire, date) values (%s,%s,%s,%s,%s,%s,%s)",
         (numero, ref, des, qte, prix, commentaire, str(datetime.datetime.now().strftime("%d/%m/%Y")))
     )
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -276,6 +277,7 @@ def find_numero_acaht():
     )
     result = cur.fetchone()
 
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return f"FMD/AD/{result[0] + 1}"
@@ -290,6 +292,7 @@ def add_devis(numero, date, client, montant, objet, remise, montant_lettres, not
                         values  (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (numero, date, client, montant, objet, remise, montant_lettres, status, notabene, delai, point_liv, validite, paiement, username,
                  f"{username} - {str(datetime.datetime.now().strftime("%d/%m/%Y - %H:%M:%S"))}"))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -307,6 +310,7 @@ def update_devis(montant, remise, note_bene, delai, point_liv, validite, paiemen
         paiement = %s,
         objet = %s
         WHERE numero = %s""", (montant, remise, note_bene, delai, point_liv, validite, paiement, objet, numero))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -315,6 +319,7 @@ def delete_devis_details(numero):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""DELETE FROM devis_details WHERE numero = %s""", (numero, ))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -323,6 +328,7 @@ def delete_devis_details_by_numero(numero):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""DELETE FROM devis_details WHERE numero = %s""", (numero, ))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -331,6 +337,7 @@ def delete_devis(numero):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""DELETE FROM devis WHERE numero = %s""", (numero, ))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -352,6 +359,7 @@ def search_devis_details(numero):
         row = row + (total,)
         r_final.append(row)
 
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return r_final
@@ -361,6 +369,7 @@ def add_devis_details(numero, reference, qte, prix):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(""" INSERT INTO devis_details (numero, reference, qte, prix) values (%s,%s,%s,%s)""", (numero, reference, qte, prix))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -378,6 +387,7 @@ def show_info_devis(numero):
         "montant_lettres": resultat[5], "statut": resultat[6], "note_bene": resultat[7], "delai": resultat[8],
         "point_liv": resultat[9], "validite": resultat[10], "paiement": resultat[11]
     }
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -399,6 +409,7 @@ def find_devis_details(numero):
         {"id": data[0], "numero": data[1], "reference": data[2], "qte": data[3], "prix": data[4], "designation": data[5], "unite": data[6]}
         for data in resultat
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -418,6 +429,7 @@ def all_devis():
          "objet": data[5], "remise": data[6], "statut": data[7], "note_bene": data[8], "delai": data[9],
          "point_liv": data[10], 'validité': data[11], "paiement": data[12], "username": data[14]} for data in resultat
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -434,6 +446,7 @@ def select_one_devis(numero):
     final = {"id": resultat[0], "numero": resultat[1], "date": resultat[2], "client": resultat[13], "montant": resultat[4],
          "objet": resultat[5], "remise": resultat[6], "statut": resultat[7], "note_bene": resultat[8], "delai": resultat[9],
          "point_liv": resultat[10], 'validite': resultat[11], "paiement": resultat[12], "cree_par": resultat[14]}
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -443,6 +456,7 @@ def maj_statut_devis(numero):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE devis set statut=%s WHERE numero=%s""", ("Facturé", numero))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -453,6 +467,7 @@ def search_initiales(id_client: int):
     cur = conn.cursor()
     cur.execute("""SELECT initiales FROM clients WHERE id = %s""", (id_client,))
     resultat = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return resultat[0]
@@ -480,6 +495,7 @@ def find_devis_num(id_client):
         else:
             r_final = ini_cli + str(dev_num + 1) + "/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
 
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return r_final
@@ -490,6 +506,7 @@ def id_client_by_name(nom):
     cur = conn.cursor()
     cur.execute("""SELECT id FROM clients WHERE nom = %s""", (nom,))
     result = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return result[0]
@@ -500,6 +517,7 @@ def add_client(nom, ini, cont, nui, rc, mail, comm):
     cur = conn.cursor()
     cur.execute("""INSERT INTO clients (nom, initiales, contact, nui, rc, courriel, commercial) values (%s,%s,%s,%s,%s,%s,%s)""",
                 (nom, ini, cont, nui, rc, mail, comm))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -514,6 +532,7 @@ def all_clients():
          "courriel": data[6], "commercial": data[7]}
         for data in res
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -527,6 +546,7 @@ def recherche_initiales():
     r_final = []
     for row in resultat:
         r_final.append(row[0])
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return r_final
@@ -540,6 +560,7 @@ def infos_clients(id_client):
     resultat = cur.fetchone()
     final = {"id": resultat[0], "nom": resultat[1], "initiales": resultat[2], "contact": resultat[3], "NUI": resultat[4], "RC": resultat[5],
          "courriel": resultat[6], "commercial": resultat[7]}
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -558,6 +579,7 @@ def update_client(nom, ini, cont, nui, rc, mail, comm, id_client):
                     courriel = %s,
                     commercial = %s
                     WHERE id = %s""", (nom, ini, cont, nui, rc, mail, comm, id_client))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -570,6 +592,7 @@ def add_facture(numero, client, montant, objet, remise, montant_lettres, devis, 
     cur.execute("""INSERT INTO factures (numero, date, client, montant, objet, remise, montant_lettres, devis, bc_client, ov, delai) values 
                     (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (numero, today, client, montant, objet, remise, montant_lettres, devis, bc_client, ov, delai))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -578,6 +601,7 @@ def add_details_facture(numero, ref, qte, prix):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""INSERT INTO facture_details (numero, reference, qte, prix) values (%s,%s,%s,%s)""", (numero, ref, qte, prix))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -603,6 +627,7 @@ def find_facture_num(id_client):
 
         else:
             r_final = ini_cli + str(fact_num + 1) + "/" + INITIALES + "/FA/" + f"{datetime.date.today().year}"
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return r_final
@@ -619,6 +644,7 @@ def show_info_factures(numero):
         "client": resultat[0], "date": resultat[1], "objet": resultat[2], "montant": resultat[3],
         "remise": resultat[4], "bc_client": resultat[6], "devis": resultat[7], "ov": resultat[8]
     }
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -649,6 +675,7 @@ def all_factures_by_client_id(client_id):
         else:
             data["statut"] = "en cours"
 
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -659,6 +686,7 @@ def mt_deja_paye(numero):
     cur = conn.cursor()
     cur.execute("""SELECT sum(montant) FROM reglement WHERE facture = %s""", (numero,))
     resultat = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return resultat[0] if resultat[0] is not None else 0
@@ -671,6 +699,7 @@ def add_reglement(facture, montant, typp, date):
         """INSERT INTO reglement (facture, montant, typp, date) values (%s,%s,%s,%s)""",
         (facture, montant,typp, date)
     )
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -691,6 +720,7 @@ def all_factures():
           }
         for data in resultat
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -714,6 +744,7 @@ def factures_details(numero):
         }
         for data in resultat
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -725,6 +756,7 @@ def search_designation(reference):
     cur = conn.cursor()
     cur.execute("""SELECT designation, prix FROM articles WHERE reference = %s""", (reference,))
     resultat = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return resultat[0]
@@ -741,6 +773,7 @@ def all_references():
         }
         for data in resultat
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return r_final
@@ -755,6 +788,7 @@ def all_reglements_by_facture(facture):
         {"montant": data[2], "type": data[3], "date": data[4]}
         for data in resultat
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -765,6 +799,7 @@ def find_stock_ref(ref):
     cur = conn.cursor()
     cur.execute("""SELECT qté FROM articles WHERE reference =%s""", (ref,))
     resultat = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return resultat[0]
@@ -775,6 +810,7 @@ def find_nature_ref(ref):
     cur = conn.cursor()
     cur.execute("""SELECT nature FROM articles WHERE reference =%s""", (ref,))
     resultat = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return resultat[0]
@@ -785,6 +821,7 @@ def add_ref(ref, des, nat, unite):
     cur = conn.cursor()
     cur.execute("""INSERT INTO articles (reference, designation, nature, qté, prix, unite) values (%s,%s,%s,%s,%s,%s)""",
                 (ref, des, nat, 0, 0, unite))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -793,6 +830,7 @@ def update_stock(qte, ref):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE articles SET qté = %s WHERE reference = %s""", (qte, ref))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -802,6 +840,7 @@ def update_ref_by_name(designation, ref_id):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("UPDATE articles SET designation = %s WHERE id = %s", (designation, ref_id))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -811,6 +850,7 @@ def update_prix_by_ref(prix, ref):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("UPDATE articles SET prix = %s WHERE reference = %s", (prix, ref))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -828,6 +868,7 @@ def check_login(login, passw):
         for data in resultat
     ]
     user = {"login": login, "pass": passw}
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return True if user in final else False
@@ -835,6 +876,7 @@ def check_login(login, passw):
 
 def all_users():
     conn = get_db_connection()
+    print("connected")
     cur = conn.cursor()
     cur.execute("""SELECT * from utilisateurs""")
     resultat = cur.fetchall()
@@ -845,6 +887,7 @@ def all_users():
         }
         for data in resultat
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -857,6 +900,7 @@ def add_user(nom, prenom, email, niveau, poste):
         "INSERT INTO utilisateurs (login, pass, nom, prenom, email, statut, niveau, poste) values (%s,%s,%s,%s,%s,%s,%s,%s)",
         ("", "", nom, prenom, email, "nouveau".upper(), niveau, poste)
     )
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -870,6 +914,7 @@ def search_user_infos(login):
             "id": resultat[0], "login": resultat[1], "pass": resultat[2], "nom": resultat[3], "prenom": resultat[4], "email": resultat[5],
             "statut": resultat[6], "niveau": resultat[7], "poste": resultat[8]
         }
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -884,6 +929,7 @@ def search_user_by_mail(email):
             "id": resultat[0], "login": resultat[1], "pass": resultat[2], "nom": resultat[3], "prenom": resultat[4], "email": resultat[5],
             "statut": resultat[6], "niveau": resultat[7], "poste": resultat[8]
         }
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -899,6 +945,7 @@ def make_user_new(login, password, email):
         statut =%s
         WHERE email = %s""", (login, password, "ACTIF", email)
     )
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -913,6 +960,7 @@ def desactivate_user(email):
         statut =%s
         WHERE email = %s""", ("", "", "INACTIF", email)
     )
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -923,6 +971,7 @@ def delete_user(email):
     cur.execute(
         "DELETE FROM utlisateurs WHERE  email =%s", (email,)
     )
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -937,6 +986,7 @@ def reactivate_user(email):
         statut =%s
         WHERE email = %s""", ("", "", "NOUVEAU", email)
     )
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -946,6 +996,7 @@ def add_bordereau(numero, facture, bc_client):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""INSERT INTO bordereau (numero, facture, bc_client, date) values (%s,%s,%s,%s)""", (numero, facture, bc_client, str(datetime.date.today())))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -954,6 +1005,7 @@ def add_bordereau_details(numero, ref, qte, prix):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""INSERT INTO bordereau_details (numero, reference, qte, prix) values (%s,%s,%s,%s)""", (numero, ref, qte, prix))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -980,6 +1032,7 @@ def find_bordereau_num(id_client):
         else:
             r_final = ini_cli + str(bor_num + 1) + "/" + INITIALES + "/DV/" + f"{datetime.date.today().year}"
 
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return r_final
@@ -991,6 +1044,7 @@ def search_bordereau_by_facture(facture):
     cur.execute("""SELECT * FROM bordereau WHERE facture = %s""", (facture,))
     resultat = cur.fetchone()
     final = {"id": resultat[0], "numero": resultat[1], "facture": resultat[2], "bc_client": resultat[3]}
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -1003,6 +1057,7 @@ def add_historique(ref, typp, num, qte_av, qte, qte_ap):
     today = str(datetime.datetime.now().strftime("%d/%m/%Y"))
     cur.execute("""INSERT INTO historique (reference, date, mouvement, num_mvt, qte_avant, qte_mvt, qte_apres) values (%s,%s,%s,%s,%s,%s,%s)""",
                 (ref, today, typp, num, qte_av, qte, qte_ap))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -1019,6 +1074,7 @@ def find_histo_num():
     else:
         numero = INITIALES + "/EN/" + str(resultat[0] + 1)
 
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return numero
@@ -1033,6 +1089,7 @@ def all_historique_by_ref(reference):
         {"id": data[0], "reference": data[1], "date": data[2], "mouvement": data[3], "num_mvt": data[4], "qte_avant": data[5], "qte_mvt": data[6], "qte_apres": data[7]}
         for data in result
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -1043,6 +1100,7 @@ def all_historique():
     cur = conn.cursor()
     cur.execute("""SELECT * FROM historique""")
     result = cur.fetchall()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return result
@@ -1053,6 +1111,7 @@ def nb_achats():
     cur = conn.cursor()
     cur.execute("""SELECT count(id) FROM achats""")
     resultat = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     if resultat[0] is None:
@@ -1070,6 +1129,7 @@ def maj_prix_ref(prix, reference):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE articles SET prix = %s WHERE reference = %s """, (prix, reference))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -1078,6 +1138,7 @@ def delete_ref(reference):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""DELETE FROM articles WHERE reference = %s """, (reference,))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -1088,6 +1149,7 @@ def add_fournisseur(nom, initiales, contact, nui, rc, courriel, commercial):
     cur = conn.cursor()
     cur.execute("""INSERT INTO fournisseurs (nom, initiales, contact, nui, rc, courriel, commercial) values (%s,%s,%s,%s,%s,%s,%s)""",
                 (nom, initiales, contact, nui, rc, courriel, commercial))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -1097,6 +1159,7 @@ def infos_fournisseur_by_name(nom):
     cur = conn.cursor()
     cur.execute("""SELECT * FROM fournisseurs WHERE nom = %s""", (nom,))
     result = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return result
@@ -1107,6 +1170,7 @@ def infos_fournisseur_by_id(id_fournisseur):
     cur = conn.cursor()
     cur.execute("""SELECT * FROM fournisseurs WHERE id = %s""", (id_fournisseur,))
     result = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return result
@@ -1122,6 +1186,7 @@ def all_fournisseurs():
          "courriel": data[6], "commercial": data[7]}
         for data in result
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -1135,6 +1200,7 @@ def all_fournisseur_name():
     final = []
     for data in result:
         final.append(data[0])
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -1148,6 +1214,7 @@ def all_initiales_fournisseurs():
     final = []
     for data in result:
         final.append(data[0])
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -1164,6 +1231,7 @@ def update_fournisseur_by_id(nom, initiales, contact, nui, rc, courriel, comm, i
                 RC = %s,
                 courriel = %s,
                 commercial = %s WHERE id = %s""", (nom, initiales, contact, nui, rc, courriel, comm, id_foun))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -1172,6 +1240,7 @@ def delete_fournisseurs_by_id(id_fournisseur):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""DELETE FROM fournisseurs WHERE id = %s""", (id_fournisseur, ))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -1192,6 +1261,7 @@ def all_commandes_by_fournisseur_id(fourn_id):
         }
         for data in result
     ]
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -1205,6 +1275,7 @@ def list_commandes():
     final = []
     for row in result:
         final.append(row[0])
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return final
@@ -1215,6 +1286,7 @@ def show_infos_commandes(numero):
     cur = conn.cursor()
     cur.execute("""SELECT * FROM commandes WHERE numero = %s""", (numero,))
     result = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return result
@@ -1225,6 +1297,7 @@ def nb_commandes_by_fournisseur(id_fournisseur):
     cur = conn.cursor()
     cur.execute("""SELECT count(id) FROM commandes WHERE fournisseur =%s""", (id_fournisseur, ))
     result = cur.fetchone()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return result[0]
@@ -1248,6 +1321,7 @@ def update_state_command(statut, numero):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute("""UPDATE commandes SET statut = %s WHERE numero = %s""", (statut, numero))
+    conn.commit()
     cur.close()
     release_db_connection(conn)
 
@@ -1257,6 +1331,7 @@ def commande_details_by_num(numero):
     cur = conn.cursor()
     cur.execute("""SELECT reference, qte, prix FROM commande_details WHERE numero = %s""", (numero,))
     result = cur.fetchall()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return result
@@ -1267,6 +1342,7 @@ def all_commande_details():
     cur = conn.cursor()
     cur.execute("""SELECT numero, reference, qte, prix FROM commande_details""")
     result = cur.fetchall()
+    conn.commit()
     cur.close()
     release_db_connection(conn)
     return result
