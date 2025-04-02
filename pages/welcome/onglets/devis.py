@@ -1209,9 +1209,9 @@ class Devis(ft.Container):
             be.add_devis(
                 self.new_num.value, str(new_date), id_client, int(self.new_montant.value),
                 objet, remise, mt_lettres, note_bene, delai, point_liv, validite, paiement,
-                self.cp.user_infos['username']
+                self.cp.utilisateur['username']
             )
-            be.add_activity(self.cp.user_infos["userlogin"], f"Création du devis {self.new_num.value}".upper())
+            be.add_activity(self.cp.utilisateur["userlogin"], f"Création du devis {self.new_num.value}".upper())
 
             self.cp.box.title.value = "Validé"
             self.cp.box.content.value = f"Devis N° {self.new_num.value} créé"
@@ -1248,7 +1248,7 @@ class Devis(ft.Container):
             mt, int(self.edit_remise.value), self.edit_notabene.value, self.edit_delai.value, self.edit_point_liv.value,
             int(self.edit_validite.value), int(self.edit_paiement.value), self.edit_objet.value, num_devis
         )
-        be.add_activity(self.cp.user_infos["userlogin"], f"modification du devis {self.edit_num.value}".upper())
+        be.add_activity(self.cp.utilisateur["userlogin"], f"modification du devis {self.edit_num.value}".upper())
 
         # on supprime les details devis précéédents
         be.delete_devis_details(num_devis)
@@ -1316,7 +1316,7 @@ class Devis(ft.Container):
                 numero_facture, info_facture["client"], info_facture["montant"], info_facture["objet"], info_facture["remise"], "",
                 self.fac_num_devis.value, self.bc_client.value, self.ov_client.value, 0)
 
-            be.add_activity(self.cp.user_infos["userlogin"], f"Facturation du devis {self.fac_num_devis.value}".upper())
+            be.add_activity(self.cp.utilisateur["userlogin"], f"Facturation du devis {self.fac_num_devis.value}".upper())
 
             # Table details facture
             for row in details:

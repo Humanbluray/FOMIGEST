@@ -20,8 +20,6 @@ class Landing(ft.View):
             route="/", bgcolor="#f2f2f2"
         )
         self.page = page
-        self.user_infos = user_infos
-
         self.login = ft.TextField(
             **login_style, prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED, label="Login"
         )
