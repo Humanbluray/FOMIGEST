@@ -200,6 +200,7 @@ class ColoredCtButton(ft.Container):
             self.scale = 1
             self.update()
 
+
 class MiniCtButton(ft.Container):
     def __init__(self, my_icon, my_tool,my_datas, on_click_function,):
         super().__init__(
