@@ -13,11 +13,11 @@ ENTITE_SWIFT = {"AFRILAND": "CCEICMCX", "CCA": "CCAMCMCY"}
 IR_VALUE = {"S": 0.055, "R": 0.022}
 TVA_VALUE = 0.1925
 
-FIRST_COLOR = "#4B2D9F"
-SECOND_COLOR = "#F22D44"
-THIRD_COLOR = "#e9c46a"
-FOURTH_COLOR = "#f4a261"
-FIFTH_COLOR = "#E76F51"
+FIRST_COLOR = "#00353F"
+SECOND_COLOR = "#4AA3A2"
+THIRD_COLOR = "#FFBF66"
+FOURTH_COLOR = "#D46F4D"
+FIFTH_COLOR = "#430C05"
 
 FOOTER_URl = "https://olwbffbhwygayonkofmu.supabase.co/storage/v1/object/public/images//footer.png"
 HEARDER_URL = "https://olwbffbhwygayonkofmu.supabase.co/storage/v1/object/public/images//header.png"

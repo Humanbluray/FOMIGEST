@@ -50,7 +50,7 @@ class Landing(ft.View):
         self.card = ft.Card(
             elevation=10, surface_tint_color="white",
             content=ft.Container(
-                border_radius=16, padding=20, width=280, bgcolor="white",
+                border_radius=16, padding=20, width=350, bgcolor="white",
                 content=ft.Column(
                     controls=[
                         ft.Image(src=LOGO_URL, width=100, height=100),
