@@ -1170,7 +1170,7 @@ class Factures(ft.Container):
 
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
-                            mt_ir = mt_total*IR_VALUE[regime]
+                            mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = int(mt_total - mt_ir)
                             draw_simple_paragraph(
                                 f"IR:    {ajout_separateur(mt_ir)}",
@@ -1854,7 +1854,7 @@ class Factures(ft.Container):
 
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
-                            mt_ir = mt_total*IR_VALUE[regime]
+                            mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = int(mt_total - mt_ir)
                             draw_simple_paragraph(
                                 f"IR:    {ajout_separateur(mt_ir)}",
