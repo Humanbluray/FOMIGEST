@@ -1084,7 +1084,7 @@ class Factures(ft.Container):
                     if tva and ir:
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
-                            mt_taxe = int(mt_total * TVA_VALUE)
+                            mt_taxe = int(mt_total * Decimal(TVA_VALUE))
                             mt_ttc = mt_total + mt_taxe
                             mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_ttc - mt_ir
@@ -1122,7 +1122,7 @@ class Factures(ft.Container):
                         else:
                             rem = int(mt_total * int(self.edit_remise.value)/100)
                             mt_remise = mt_total - rem
-                            mt_taxe = int(mt_remise * TVA_VALUE)
+                            mt_taxe = int(mt_remise * Decimal(TVA_VALUE))
                             mt_ttc = mt_remise + mt_taxe
                             mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_ttc - mt_ir
@@ -1228,7 +1228,7 @@ class Factures(ft.Container):
                     elif tva and not ir:
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
-                            mt_taxe = int(mt_total * TVA_VALUE)
+                            mt_taxe = int(mt_total * Decimal(TVA_VALUE))
                             mt_ttc = mt_total + mt_taxe
 
                             draw_simple_paragraph(
@@ -1254,7 +1254,7 @@ class Factures(ft.Container):
                         else:
                             rem = int(mt_total * int(self.edit_remise.value) / 100)
                             mt_remise = mt_total - rem
-                            mt_taxe = int(mt_remise * TVA_VALUE)
+                            mt_taxe = int(mt_remise * Decimal(TVA_VALUE))
                             mt_ttc = mt_remise + mt_taxe
 
                             draw_simple_paragraph(
@@ -1768,7 +1768,7 @@ class Factures(ft.Container):
                     if tva and ir:
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
-                            mt_taxe = int(mt_total * TVA_VALUE)
+                            mt_taxe = int(mt_total * Decimal(TVA_VALUE))
                             mt_ttc = mt_total + mt_taxe
                             mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_ttc - mt_ir
@@ -1806,7 +1806,7 @@ class Factures(ft.Container):
                         else:
                             rem = int(mt_total * int(self.edit_remise.value)/100)
                             mt_remise = mt_total - rem
-                            mt_taxe = int(mt_remise * TVA_VALUE)
+                            mt_taxe = int(mt_remise * Decimal(TVA_VALUE))
                             mt_ttc = mt_remise + mt_taxe
                             mt_ir = int(mt_total * Decimal(IR_VALUE[regime]))
                             mt_nap = mt_ttc - mt_ir
@@ -1912,7 +1912,7 @@ class Factures(ft.Container):
                     elif tva and not ir:
                         # si la remise est nulle
                         if int(self.edit_remise.value) == 0:
-                            mt_taxe = int(mt_total * TVA_VALUE)
+                            mt_taxe = int(mt_total * Decimal(TVA_VALUE))
                             mt_ttc = mt_total + mt_taxe
 
                             draw_simple_paragraph(
@@ -1938,7 +1938,7 @@ class Factures(ft.Container):
                         else:
                             rem = int(mt_total * int(self.edit_remise.value) / 100)
                             mt_remise = mt_total - rem
-                            mt_taxe = int(mt_remise * TVA_VALUE)
+                            mt_taxe = int(mt_remise * Decimal(TVA_VALUE))
                             mt_ttc = mt_remise + mt_taxe
 
                             draw_simple_paragraph(
