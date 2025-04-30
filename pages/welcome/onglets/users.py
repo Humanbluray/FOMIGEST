@@ -144,12 +144,12 @@ class User(ft.Container):
         )
 
         # new window ...
-        self.new_nom = ft.TextField(**field_style, width=250, label="Nom", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
-        self.new_prenom = ft.TextField(**field_style, width=250, label="Prenom", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
-        self.new_email = ft.TextField(**field_mail_style, width=250, label="email", prefix_icon=ft.icons.MAIL_OUTLINED)
-        self.new_poste = ft.TextField(**field_style, width=250, label="Prenom", prefix_icon=ft.icons.MAIL_OUTLINED)
+        self.new_nom = ft.TextField(**field_style, width=300, label="Nom", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
+        self.new_prenom = ft.TextField(**field_style, width=300, label="Prenom", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
+        self.new_email = ft.TextField(**field_mail_style, width=300, label="email", prefix_icon=ft.icons.MAIL_OUTLINED)
+        self.new_poste = ft.TextField(**field_style, width=300, label="Prenom", prefix_icon=ft.icons.MAIL_OUTLINED)
         self.new_niveau = ft.Dropdown(
-            **drop_style, width=250, prefix_icon=ft.icons.SETTINGS_ACCESSIBILITY_OUTLINED,
+            **drop_style, width=300, prefix_icon=ft.icons.SETTINGS_ACCESSIBILITY_OUTLINED,
             options=[
                 ft.dropdown.Option("administrateur".upper()),
                 ft.dropdown.Option("consultant".upper()),
@@ -161,7 +161,7 @@ class User(ft.Container):
         )
 
         self.new_window = ft.Card(
-            elevation=20, surface_tint_color="#f0f0f6", width=290, height=580,
+            elevation=20, surface_tint_color="#f0f0f6", width=500, height=580,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0),
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
@@ -202,11 +202,11 @@ class User(ft.Container):
         )
 
         # new window ...
-        self.new_nom = ft.TextField(**field_style, width=250, label="Nom", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
-        self.new_prenom = ft.TextField(**field_style, width=250, label="Prenom",
+        self.new_nom = ft.TextField(**field_style, width=300, label="Nom", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
+        self.new_prenom = ft.TextField(**field_style, width=300, label="Prenom",
                                        prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
-        self.new_email = ft.TextField(**field_mail_style, width=250, label="email", prefix_icon=ft.icons.MAIL_OUTLINED)
-        self.new_poste = ft.TextField(**field_style, width=250, label="Poste", prefix_icon=ft.icons.SUPERVISED_USER_CIRCLE_OUTLINED)
+        self.new_email = ft.TextField(**field_mail_style, width=300, label="email", prefix_icon=ft.icons.MAIL_OUTLINED)
+        self.new_poste = ft.TextField(**field_style, width=300, label="Poste", prefix_icon=ft.icons.SUPERVISED_USER_CIRCLE_OUTLINED)
         self.new_niveau = ft.Dropdown(
             **drop_style, width=190, prefix_icon=ft.icons.SETTINGS_ACCESSIBILITY_OUTLINED,
             label="Niveau d'accès",
@@ -217,11 +217,11 @@ class User(ft.Container):
             ]
         )
         self.new_bt_user = AnyButton(
-            FIRST_COLOR, None, "Valider", "white", 250, self.create_user
+            FIRST_COLOR, None, "Valider", "white", 300, self.create_user
         )
 
         self.new_window = ft.Card(
-            elevation=10, surface_tint_color="#f0f0f6", width=300, height=450,
+            elevation=10, surface_tint_color="#f0f0f6", width=500, height=450,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0),
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
@@ -263,24 +263,24 @@ class User(ft.Container):
         )
 
         # edit window ...
-        self.edit_nom = ft.TextField(**field_style, width=250, label="Nom", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
-        self.edit_prenom = ft.TextField(**field_style, width=250, label="Prenom", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
-        self.edit_email = ft.TextField(**field_mail_style, width=250, label="email", prefix_icon=ft.icons.MAIL_OUTLINED)
-        self.edit_poste = ft.TextField(**field_style, width=250, label="Prenom", prefix_icon=ft.icons.MAIL_OUTLINED)
+        self.edit_nom = ft.TextField(**field_style, width=300, label="Nom", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
+        self.edit_prenom = ft.TextField(**field_style, width=300, label="Prenom", prefix_icon=ft.icons.PERSON_OUTLINE_OUTLINED)
+        self.edit_email = ft.TextField(**field_mail_style, width=300, label="email", prefix_icon=ft.icons.MAIL_OUTLINED)
+        self.edit_poste = ft.TextField(**field_style, width=300, label="Prenom", prefix_icon=ft.icons.MAIL_OUTLINED)
         self.edit_niveau = ft.Dropdown(
-            **drop_style, width=190, prefix_icon=ft.icons.SETTINGS_ACCESSIBILITY_OUTLINED, label="Modifier niveau accès",
+            **drop_style, width=200, prefix_icon=ft.icons.SETTINGS_ACCESSIBILITY_OUTLINED, label="Modifier niveau accès",
             options=[
                 ft.dropdown.Option("administrateur".upper()),
                 ft.dropdown.Option("consultant".upper()),
                 ft.dropdown.Option("operateur".upper())
             ]
         )
-        self.edit_level = ft.TextField(**readonly_date_style, label="Niveau d'acces actuel", width=250)
+        self.edit_level = ft.TextField(**readonly_date_style, label="Niveau d'acces actuel", width=300)
         self.edit_bt_user = AnyButton(
             FIRST_COLOR, None, "Valider Modifications", "white", None, None
         )
         self.edit_window = ft.Card(
-            elevation=20, surface_tint_color="#f0f0f6", width=300, height=550,
+            elevation=20, surface_tint_color="#f0f0f6", width=500, height=550,
             clip_behavior=ft.ClipBehavior.ANTI_ALIAS, shadow_color="black",
             scale=ft.transform.Scale(0),
             animate_scale=ft.Animation(300, ft.AnimationCurve.DECELERATE),
