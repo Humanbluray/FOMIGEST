@@ -696,7 +696,7 @@ def add_reglement(facture, montant, typp, date):
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute(
-        """INSERT INTO reglement (facture, montant, typp, date) values (%s,%s,%s,%s)""",
+        """INSERT INTO reglement (facture, montant, type, date) values (%s,%s,%s,%s)""",
         (facture, montant,typp, date)
     )
     conn.commit()
