@@ -47,7 +47,7 @@ numbers_field_style: dict = dict(
     input_filter=ft.NumbersOnlyInputFilter(), text_align=ft.TextAlign.RIGHT.RIGHT
 )
 login_style: dict = dict(
-    height=45, dense=True,
+    height=45,
     focused_border_color=FIRST_COLOR,
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
@@ -57,7 +57,7 @@ login_style: dict = dict(
     focused_border_width=2,
 )
 inactive_field_style: dict = dict(
-    height=45, disabled=True, dense=True,
+    height=45, disabled=True,
     content_padding=12, cursor_height=24,
     label_style=ft.TextStyle(size=12, font_family="Poppins Medium", color="black"),
     hint_style=ft.TextStyle(size=12, font_family="Poppins Medium"),
